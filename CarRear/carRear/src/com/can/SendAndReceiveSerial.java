@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Random;
 
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
@@ -45,10 +46,10 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 				serialPort = (SerialPort) commPort;
 				serialPort.addEventListener(this);
 				serialPort.notifyOnDataAvailable(true);
-				serialPort.setSerialPortParams(921600, // ��żӵ�
-						SerialPort.DATABITS_8, // ������ ��Ʈ
-						SerialPort.STOPBITS_1, // stop ��Ʈ
-						SerialPort.PARITY_NONE); // �и�Ƽ
+				serialPort.setSerialPortParams(921600, // 통신속도
+						SerialPort.DATABITS_8, // 데이터 비트
+						SerialPort.STOPBITS_1, // stop 비트
+						SerialPort.PARITY_NONE); // 패리티
 				in = serialPort.getInputStream();
 				bin = new BufferedInputStream(in);
 				out = serialPort.getOutputStream();
@@ -76,13 +77,13 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		String data;
 
 		public SerialWriter() {
-			// can protocol�� ����, ������
+			// can protocol에 참여, 고정값
 			// :canmsg\r
 			this.data = ":G11A9\r";
 		}
 
 		public SerialWriter(String serialData) {
-			// CheckSum Data ����
+			// CheckSum Data create
 			this.data = sendDataFormat(serialData);
 		}
 
@@ -167,7 +168,21 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 
 	public static void main(String args[]) throws IOException {
 		SendAndReceiveSerial ss = new SendAndReceiveSerial("COM6", true);
-		ss.sendSerial("W2810003B010000000000005011", "10003B01");
-		// ss.close();
+		Random r = new Random();
+		while(true) {
+			int i = r.nextInt(100);
+			
+			// i가 90이상일 경우 데이터 전송
+			// 센서에 맞춰 데이터가 전송되는 경우 설정하기
+			if(i > 90) {
+				ss.sendSerial("W2810003B010000000000005011", "10003B01");
+			}
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 }
