@@ -23,7 +23,7 @@ public class MainController {
 	
 	Client client;
 	public MainController() {
-		client = new Client("192.168.0.103",5555,"[WEB]");
+		client = new Client("15.165.195.250",5555,"[WEB]");
 		try {
 			client.connect();
 		} catch (IOException e) {
