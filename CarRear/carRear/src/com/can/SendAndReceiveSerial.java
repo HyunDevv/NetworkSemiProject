@@ -165,18 +165,61 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		}
 
 	}
+	
+	public String sensorPIR() {
+		String result = "";
+		
+		// 적외선 가상 데이터
+		// 영유아 판단
+		Random rPIR = new Random();
+		int pir = rPIR.nextInt(10);
+		
+		// pir이 0일 경우: PIR 인식, 영유아 확인
+		if(pir == 0) {
+			result = "0000000000005011";
+		}else {
+			result = "0000000000005012";
+		}
+		
+		return result;
+	}
+	
+	public String sensorTemp() {
+		String result = "";
+		
+		// 온도 가상 데이터
+		Random rTemp = new Random();
+		int temp = rTemp.nextInt(10);
+		
+		if(temp < 2) {
+			// 저온
+			result = "0000000000005021";
+		}else if(temp > 7) {
+			// 고온
+			result = "0000000000005022";
+		}else {
+			// 상온
+			result = "0000000000005020";
+		}
+		
+		return result;
+	}
 
 	public static void main(String args[]) throws IOException {
 		SendAndReceiveSerial ss = new SendAndReceiveSerial("COM6", true);
-		Random r = new Random();
+		
+		// total = W2810003B0100000000000050nn
+		String code = "W";
+		String type = "28";
+		String canId = "10003B01";
+		
+		ss.sensorPIR();
+		
 		while(true) {
-			int i = r.nextInt(100);
+			// 임의값에 따라 데이터 전송
+			ss.sendSerial(code + type + canId + ss.sensorPIR(), canId);
+			ss.sendSerial(code + type + canId + ss.sensorTemp(), canId);
 			
-			// i가 90이상일 경우 데이터 전송
-			// 센서에 맞춰 데이터가 전송되는 경우 설정하기
-			if(i > 90) {
-				ss.sendSerial("W2810003B010000000000005011", "10003B01");
-			}
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
@@ -185,4 +228,5 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 			}
 		}
 	}
+	
 }
