@@ -3,10 +3,11 @@ package com.chat;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.HttpURLConnection;
 import java.net.Socket;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -19,6 +20,7 @@ public class Client {
 	String id;
 	Socket socket;
 	Sender sender;
+	static String ip;
 
 	public Client() {}
 	public Client(String address, int port, String id) {
@@ -29,6 +31,7 @@ public class Client {
 	}
 	
 	public void connect() throws IOException {
+		System.out.println("test");
 		try {
 			socket = new Socket(address, port);
 		} catch (Exception e) {
@@ -43,9 +46,11 @@ public class Client {
 			}
 		} 
 		
+		ip = (socket.getInetAddress().toString());
+		
 		System.out.println("Connected Server:"+address);
 		sender = new Sender(socket);
-		// new Receiver(socket).start();
+		new Receiver(socket).start();
 	}
 
 	public void sendTarget(String ip, String cmd) {
@@ -131,6 +136,9 @@ public class Client {
 	
 	class Receiver extends Thread{
 		ObjectInputStream oi;
+		String urlstr = "http://192.168.0.103/webServer/inputChat.mc";
+		URL url = null;
+		HttpURLConnection con = null;
 		public Receiver(Socket socket) throws IOException {
 			oi = new ObjectInputStream(socket.getInputStream());
 		}
@@ -149,6 +157,12 @@ public class Client {
 						continue;
 					}
 					System.out.println(msg.getId()+msg.getMsg());
+					
+					url = new URL(urlstr + "?id=" + msg.getId() + "&msg=" + msg.getMsg());
+					con = (HttpURLConnection) url.openConnection();
+					con.setReadTimeout(10000); // 10초동안 응답이 없으면 타임아웃
+					con.setRequestMethod("POST"); // 어떤 방식으로 보낼지
+					con.getInputStream();
 				} catch (Exception e) {
 					e.printStackTrace();
 					break;
@@ -170,8 +184,8 @@ public class Client {
 	}
 	
 	public static void main(String[] args) {
-		Client client = new Client("192.168.0.103",5555,
-				"[JH]");
+		System.out.println("test0");
+		Client client = new Client("192.168.0.103",5555,"[JH]");
 		try {
 			client.connect();
 			client.sendMsg();
