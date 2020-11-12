@@ -61,8 +61,8 @@ public class MainActivity extends AppCompatActivity {
         et_ip = findViewById(R.id.et_ip);
         et_msg = findViewById(R.id.et_msg);
         port = 5558;
-        address = "192.168.0.19";
-        id="KiHoon";
+        address = "192.168.0.37";
+        id="[JaeHyun]";
 
         new Thread(con).start();
 
@@ -103,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
 
     // 웹서버에서 센서값을 받아오자!
     public void getSensor(){
-        String url = "http://192.168.0.19/tcpip/car.jsp";
+        String url = "http://192.168.0.28/tcpip1/car.jsp";
         //url += "?id="+id+"&pwd="+pwd;
         //String result = HttpConnect.getString(url); <- 서브스레드 안에서 해야한다!!
         httpAsync = new HttpAsync();

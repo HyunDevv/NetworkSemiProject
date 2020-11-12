@@ -10,7 +10,7 @@
     <TextView
         android:id="@+id/tx_list"
         android:layout_width="match_parent"
-        android:layout_height="81dp"
+        android:layout_height="149dp"
         android:text="list" />
 
     <EditText
@@ -31,11 +31,11 @@
         android:inputType="textPersonName" />
 
     <Button
-        android:id="@+id/bt_send"
+        android:id="@+id/button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="clickBt"
-        android:text="send" />
+        android:text="Button" />
 
     <TextView
         android:id="@+id/tx_sen"
@@ -46,14 +46,8 @@
     <TextView
         android:id="@+id/tx_msg"
         android:layout_width="match_parent"
-        android:layout_height="400dp"
+        android:layout_height="match_parent"
         android:background="#FF9800"
         android:hint="msg" />
-
-    <Button
-        android:id="@+id/bt_fcm"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="fcm" />
 
 </LinearLayout>
