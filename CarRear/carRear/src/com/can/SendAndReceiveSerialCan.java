@@ -21,8 +21,12 @@ public class SendAndReceiveSerialCan implements SerialPortEventListener {
 	private CommPort commPort;
 	private String result;
 	private String rawCanID, rawTotal;
+	SendAndReceiveSerial arduino;
 	// private boolean start = false;
 
+	public void setArduino(SendAndReceiveSerial arduino) {
+		this.arduino = arduino;
+	}
 	
 	// Serial-Can 통신
 	public SendAndReceiveSerialCan(String portName, boolean mode) {
@@ -73,6 +77,19 @@ public class SendAndReceiveSerialCan implements SerialPortEventListener {
 		}
 		Thread sendTread = new Thread(new SerialWriter(rawTotal));
 		sendTread.start();
+	}
+	
+	public void checkCan(String data) {
+		String receiveTotal = data.substring(1, 28);
+		String receiveID = data.substring(4, 12);
+		String receiveData = data.substring(12, 28);
+		
+		// send data arduino
+		if(receiveData.equals("0000000000005011")) {
+			arduino.sendIoT("s");
+		}else if(receiveData.equals("0000000000005010")) {
+			arduino.sendIoT("t");
+		}
 	}
 
 	private class SerialWriter implements Runnable {
@@ -142,7 +159,8 @@ public class SendAndReceiveSerialCan implements SerialPortEventListener {
 
 				String ss = new String(readBuffer);
 				System.out.println("Receive Low Data:" + ss + "||");
-
+				
+				checkCan(ss);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -168,47 +186,37 @@ public class SendAndReceiveSerialCan implements SerialPortEventListener {
 
 	}
 	
-	public String sensorPIR() {
-		String result = "";
-		
-		// 적외선 가상 데이터
-		// 영유아 판단
-		Random rPIR = new Random();
-		int pir = rPIR.nextInt(10);
-		
-		// pir이 0일 경우: PIR 인식, 영유아 확인
-		if(pir == 0) {
-			result = "0000000000005011";
-		}else {
-			result = "0000000000005012";
-		}
-		
-		return result;
-	}
+
+	public void sendIoT(String cmd) {
 	
-	public String sensorTemp() {
-		String result = "";
-		
-		// 온도 가상 데이터
-		Random rTemp = new Random();
-		int temp = rTemp.nextInt(10);
-		
-		if(temp < 2) {
-			// 저온
-			result = "0000000000005021";
-		}else if(temp > 7) {
-			// 고온
-			result = "0000000000005022";
-		}else {
-			// 상온
-			result = "0000000000005020";
+		Thread t1 = new Thread (new SendIoT(cmd));
+		t1.start();
+	}
+	class SendIoT implements Runnable{
+
+		String cmd;
+		public SendIoT(String cmd) {
+			this.cmd = cmd;
+		}
+
+		@Override
+		public void run() {
+		     byte[]datas=cmd.getBytes();
+		     try {
+				out.write(datas);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 		}
 		
-		return result;
 	}
 
+
 	public static void main(String args[]) throws IOException {
-		SendAndReceiveSerialCan ss = new SendAndReceiveSerialCan("COM4", true);
+		SendAndReceiveSerial arduino = new SendAndReceiveSerial("COM5", true);
+		SendAndReceiveSerialCan ss = new SendAndReceiveSerialCan("COM9", true);
 	}
 
 }

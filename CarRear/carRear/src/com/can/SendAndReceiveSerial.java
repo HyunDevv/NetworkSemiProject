@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Random;
+import java.util.Scanner;
 
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
@@ -21,8 +22,13 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 	private CommPort commPort;
 	private String result;
 	private String rawCanID, rawTotal;
+	SendAndReceiveSerialCan can;
 	// private boolean start = false;
 
+	public void setCan(SendAndReceiveSerialCan can) {
+		this.can = can;
+	}
+	
 	public SendAndReceiveSerial(String portName, boolean mode) {
 		try {
 			if (mode == true) {
@@ -72,19 +78,21 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		Thread sendTread = new Thread(new SerialWriter(rawTotal));
 		sendTread.start();
 	}
+	
+	public void checkserial(String data) {
 
-	public void sendcan(String data) {
-		SendAndReceiveSerialCan srcan = new SendAndReceiveSerialCan("COM6", true);
-		
-		// sensor, data에 따라 전송
-		if(data.equals("0")) {
-			srcan.sendSerial("W2810003B010000000000005020", "10003B01");
-		}else if(data.equals("1")) {
-			srcan.sendSerial("W2810003B010000000000005021", "10003B01");
-		}else if(data.equals("2")) {
-			srcan.sendSerial("W2810003B010000000000005022", "10003B01");
+		// check data
+		if(data.equals("stop")) {
+			
+		}else {
+			// send data(Sensor+value) can
+			double value = Double.parseDouble(data);
+			String strV = (int)(value * 100) + "";
+			can.sendSerial("W2810003B01" + "0001" + "00000000"+strV, "10003B01");
+			System.out.println("sendSerial-can: "+ strV);
 		}
 	}
+	
 	private class SerialWriter implements Runnable {
 		String data;
 
@@ -153,7 +161,7 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 				String ss = new String(readBuffer);
 				System.out.println("Receive Low Data:" + ss + "||");
 
-				sendcan(ss.substring(0, 1));
+				checkserial(ss);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -178,44 +186,44 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		}
 
 	}
+
+	public void sendIoT(String cmd) {
+		Thread t1 = new Thread (new SendIoT(cmd));
+		t1.start();
+	}
 	
-	public String sensorPIR() {
-		String result = "";
-		
-		// 적외선 가상 데이터
-		// 영유아 판단
-		Random rPIR = new Random();
-		int pir = rPIR.nextInt(10);
-		
-		// pir이 0일 경우: PIR 인식, 영유아 확인
-		if(pir == 0) {
-			result = "0000000000005011";
-		}else {
-			result = "0000000000005012";
+	class SendIoT implements Runnable{
+
+		String cmd;
+		public SendIoT(String cmd) {
+			this.cmd = cmd;
 		}
-		
-		return result;
+
+		@Override
+		public void run() {
+		     byte[]datas=cmd.getBytes();
+		     try {
+				out.write(datas);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 
+
 	public static void main(String args[]) throws IOException {
-		SendAndReceiveSerial ss = new SendAndReceiveSerial("COM4", true);
+
+		SendAndReceiveSerial ss = new SendAndReceiveSerial("COM5", true);
 		
-		// total = W2810003B0100000000000050nn
-//		String code = "W";
-//		String type = "28";
-//		String canId = "10003B01";
-//		
-//		while(true) {
-//			// 임의값에 따라 데이터 전송
-//			ss.sendSerial(code + type + canId + ss.sensorPIR(), canId);
-//			
-//			try {
-//				Thread.sleep(1000);
-//			} catch (InterruptedException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//		}
+		Scanner scan = new Scanner(System.in);
+		while(true) {
+			String str = scan.nextLine();
+			ss.sendIoT(str);
+		}
+		//ss.sendSerial("W2810003B010000000000005011", "10"+ "003B01");
+		//ss.sendIoT("s");
+		//ss.close();
 	}
 }
 
