@@ -40,7 +40,7 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		if (portIdentifier.isCurrentlyOwned()) {
 			System.out.println("Error: Port is currently in use");
 		} else {
-			commPort = portIdentifier.open(this.getClass().getName(), 5000);
+			commPort = portIdentifier.open(this.getClass().getName(), 5001);
 			if (commPort instanceof SerialPort) {
 				serialPort = (SerialPort) commPort;
 				serialPort.addEventListener(this);
@@ -70,6 +70,21 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		}
 		Thread sendTread = new Thread(new SerialWriter(rawTotal));
 		sendTread.start();
+	}
+	
+	public void checkcode(String dataframe) {
+		String code = dataframe.substring(0, 1);
+		String data = dataframe.substring(11);
+		if(code.equals("U")) {
+			if(data.equals("0000000000005020")) {
+				System.out.println("저온");
+			}else if(data.equals("0000000000005020")) {
+				System.out.println("상온");
+			}else if(data.equals("0000000000005022")) {
+				System.out.println("고온");
+			}
+		}
+		
 	}
 
 	private class SerialWriter implements Runnable {
@@ -139,6 +154,9 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 
 				String ss = new String(readBuffer);
 				System.out.println("Receive Low Data:" + ss + "||");
+				
+				result = ss.substring(1, 28);
+				checkcode(result);
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -167,7 +185,7 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 
 	public static void main(String args[]) throws IOException {
 		SendAndReceiveSerial ss = new SendAndReceiveSerial("COM6", true);
-		ss.sendSerial("W2810003B010000000000005011", "10003B01");
+		//ss.sendSerial("W2810003B010000000000005011", "10003B01");
 		// ss.close();
 	}
 }
