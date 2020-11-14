@@ -4,7 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Scanner;
+import java.util.Random;
 
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
@@ -12,7 +12,7 @@ import gnu.io.SerialPort;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
 
-public class SendAndReceiveSerial implements SerialPortEventListener {
+public class SendAndReceiveSerialCan implements SerialPortEventListener {
 	private BufferedInputStream bin;
 	private InputStream in;
 	private OutputStream out;
@@ -21,9 +21,15 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 	private CommPort commPort;
 	private String result;
 	private String rawCanID, rawTotal;
+	SendAndReceiveSerial arduino;
 	// private boolean start = false;
 
-	public SendAndReceiveSerial(String portName, boolean mode) {
+	public void setArduino(SendAndReceiveSerial arduino) {
+		this.arduino = arduino;
+	}
+	
+	// Serial-Can ÌÜµÏã†
+	public SendAndReceiveSerialCan(String portName, boolean mode) {
 		try {
 			if (mode == true) {
 				portIdentifier = CommPortIdentifier.getPortIdentifier(portName);
@@ -46,10 +52,10 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 				serialPort = (SerialPort) commPort;
 				serialPort.addEventListener(this);
 				serialPort.notifyOnDataAvailable(true);
-				serialPort.setSerialPortParams(921600, // ≈ÎΩ≈º”µµ
-						SerialPort.DATABITS_8, // µ•¿Ã≈Õ ∫Ò∆Æ
-						SerialPort.STOPBITS_1, // stop ∫Ò∆Æ
-						SerialPort.PARITY_NONE); // ∆–∏Æ∆º
+				serialPort.setSerialPortParams(921600, // ÌÜµÏã†ÏÜçÎèÑ
+						SerialPort.DATABITS_8, // Îç∞Ïù¥ÌÑ∞ ÎπÑÌä∏
+						SerialPort.STOPBITS_1, // stop ÎπÑÌä∏
+						SerialPort.PARITY_NONE); // Ìå®Î¶¨Ìã∞
 				in = serialPort.getInputStream();
 				bin = new BufferedInputStream(in);
 				out = serialPort.getOutputStream();
@@ -72,35 +78,31 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		Thread sendTread = new Thread(new SerialWriter(rawTotal));
 		sendTread.start();
 	}
-
-	public void checkcode(String dataframe) {
-		String code = dataframe.substring(0, 1);
-		String type = dataframe.substring(1, 3);
-		String id = dataframe.substring(3, 11);
-		String sensor = dataframe.substring(11, 15);
-		String data = dataframe.substring(15);
+	
+	public void checkCan(String data) {
+		String receiveTotal = data.substring(1, 28);
+		String receiveID = data.substring(4, 12);
+		String receiveData = data.substring(12, 28);
 		
-		if (code.equals("U")) {
-			if (sensor.equals("0001")) {
-				System.out.println("ø¬µµºæº≠");
-				double temp = Double.parseDouble(data) / 100;
-				System.out.println(temp);
-			}
+		// send data arduino
+		if(receiveData.equals("0000000000005011")) {
+			arduino.sendIoT("s");
+		}else if(receiveData.equals("0000000000005010")) {
+			arduino.sendIoT("t");
 		}
-
 	}
 
 	private class SerialWriter implements Runnable {
 		String data;
 
 		public SerialWriter() {
-			// can protocolø° ¬¸ø©, ∞Ì¡§∞™
+			// can protocolÏóê Ï∞∏Ïó¨, Í≥†Ï†ïÍ∞í
 			// :canmsg\r
 			this.data = ":G11A9\r";
 		}
 
 		public SerialWriter(String serialData) {
-			// CheckSum Data ª˝º∫
+			// CheckSum Data create
 			this.data = sendDataFormat(serialData);
 		}
 
@@ -157,10 +159,8 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 
 				String ss = new String(readBuffer);
 				System.out.println("Receive Low Data:" + ss + "||");
-
-				result = ss.substring(1, 28);
-				checkcode(result);
-
+				
+				checkCan(ss);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -185,21 +185,43 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		}
 
 	}
+	
 
-	public static void main(String args[]) throws IOException {
-		SendAndReceiveSerial ss = new SendAndReceiveSerial("COM6", true);
-		Scanner scan = new Scanner(System.in);
-		while (true) {
-			String str = scan.nextLine();
-			if (str.equals("s")) {
-				ss.sendSerial("W2810003B010000000000005011", "10003B01");
-			}else if (str.equals("t")) {
-				ss.sendSerial("W2810003B010000000000005010", "10003B01");
-			} else if (str.equals("q")) {
-				break;
-			}
+	public void sendIoT(String cmd) {
+	
+		Thread t1 = new Thread (new SendIoT(cmd));
+		t1.start();
+	}
+	class SendIoT implements Runnable{
+
+		String cmd;
+		public SendIoT(String cmd) {
+			this.cmd = cmd;
 		}
 
-		// ss.close();
+		@Override
+		public void run() {
+		     byte[]datas=cmd.getBytes();
+		     try {
+				out.write(datas);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+		
 	}
+
+
+	public static void main(String args[]) throws IOException {
+		SendAndReceiveSerial arduino = new SendAndReceiveSerial("COM5", true);
+		SendAndReceiveSerialCan ss = new SendAndReceiveSerialCan("COM9", true);
+	}
+
 }
+
+
+
+
+

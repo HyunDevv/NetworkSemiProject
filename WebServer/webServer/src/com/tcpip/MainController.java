@@ -2,11 +2,14 @@ package com.tcpip;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.json.simple.JSONObject;
 import org.springframework.stereotype.Controller;
@@ -20,7 +23,7 @@ public class MainController {
 	
 	Client client;
 	public MainController() {
-		client = new Client("192.168.0.103",5555,"[WEB]");
+		client = new Client("15.165.195.250",5555,"[WEB]");
 		try {
 			client.connect();
 		} catch (IOException e) {
@@ -171,4 +174,68 @@ public class MainController {
 			}
 	      //}
 	   }
+	
+	
+	@RequestMapping("/fcmPhone.mc") // 채팅을 받았을 때
+	public ModelAndView inputChat(ModelAndView mv, String fcmContents) throws IOException {
+
+		System.out.println(fcmContents+"라는 내용으로 FCM 전송!!!!");
+
+		URL url = null;
+		try {
+			url = new URL("https://fcm.googleapis.com/fcm/send");
+		} catch (MalformedURLException e) {
+			System.out.println("Error while creating Firebase URL | MalformedURLException");
+			e.printStackTrace();
+		}
+		HttpURLConnection conn = null;
+		try {
+			conn = (HttpURLConnection) url.openConnection();
+		} catch (IOException e) {
+			System.out.println("Error while createing connection with Firebase URL | IOException");
+			e.printStackTrace();
+		}
+		conn.setUseCaches(false);
+		conn.setDoInput(true);
+		conn.setDoOutput(true);
+		conn.setRequestProperty("Content-Type", "application/json");
+
+		// set my firebase server key
+		conn.setRequestProperty("Authorization", "key="
+				+ "AAAAK89FyMY:APA91bGxNwkQC6S_QQAKbn3COepWgndhyyjynT8ZvIEarTaGpEfMA1SPFo-ReN8b9uO21R1OfSOpNhfYbQaeohKP_sKzsgVTxu7K5tmzcjEfHzlgXRFrB1r0uqhfxLp4p836lbKw_iaN");
+
+		// create notification message into JSON format
+		JSONObject message = new JSONObject();
+		message.put("to", "/topics/car");
+		message.put("priority", "high");
+		
+		JSONObject notification = new JSONObject();
+		notification.put("title", "공지알림");
+		notification.put("body", "body1");
+		message.put("notification", notification);
+		
+		JSONObject data = new JSONObject();
+		data.put("control",fcmContents );
+		data.put("data", "");
+		message.put("data", data);
+
+
+		try {
+			OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
+			System.out.println("FCM 전송:"+message.toString());
+			out.write(message.toString());
+			out.flush();
+			conn.getInputStream();
+			System.out.println("OK...............");
+
+		} catch (IOException e) {
+			System.out.println("Error while writing outputstream to firebase sending to ManageApp | IOException");
+			e.printStackTrace();
+		}
+		
+		
+		mv.setViewName("main");
+		return mv;
+	}
+	
 }

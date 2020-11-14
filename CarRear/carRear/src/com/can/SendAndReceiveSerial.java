@@ -4,6 +4,8 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Random;
+import java.util.Scanner;
 
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
@@ -20,8 +22,13 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 	private CommPort commPort;
 	private String result;
 	private String rawCanID, rawTotal;
+	SendAndReceiveSerialCan can;
 	// private boolean start = false;
 
+	public void setCan(SendAndReceiveSerialCan can) {
+		this.can = can;
+	}
+	
 	public SendAndReceiveSerial(String portName, boolean mode) {
 		try {
 			if (mode == true) {
@@ -45,10 +52,10 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 				serialPort = (SerialPort) commPort;
 				serialPort.addEventListener(this);
 				serialPort.notifyOnDataAvailable(true);
-				serialPort.setSerialPortParams(921600, // ��żӵ�
-						SerialPort.DATABITS_8, // ������ ��Ʈ
-						SerialPort.STOPBITS_1, // stop ��Ʈ
-						SerialPort.PARITY_NONE); // �и�Ƽ
+				serialPort.setSerialPortParams(921600, // 통신속도
+						SerialPort.DATABITS_8, // 데이터 비트
+						SerialPort.STOPBITS_1, // stop 비트
+						SerialPort.PARITY_NONE); // 패리티
 				in = serialPort.getInputStream();
 				bin = new BufferedInputStream(in);
 				out = serialPort.getOutputStream();
@@ -71,18 +78,32 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		Thread sendTread = new Thread(new SerialWriter(rawTotal));
 		sendTread.start();
 	}
+	
+	public void checkserial(String data) {
 
+		// check data
+		if(data.equals("stop")) {
+			
+		}else {
+			// send data(Sensor+value) can
+			double value = Double.parseDouble(data);
+			String strV = (int)(value * 100) + "";
+			can.sendSerial("W2810003B01" + "0001" + "00000000"+strV, "10003B01");
+			System.out.println("sendSerial-can: "+ strV);
+		}
+	}
+	
 	private class SerialWriter implements Runnable {
 		String data;
 
 		public SerialWriter() {
-			// can protocol�� ����, ������
+			// can protocol에 참여, 고정값
 			// :canmsg\r
 			this.data = ":G11A9\r";
 		}
 
 		public SerialWriter(String serialData) {
-			// CheckSum Data ����
+			// CheckSum Data create
 			this.data = sendDataFormat(serialData);
 		}
 
@@ -140,6 +161,7 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 				String ss = new String(readBuffer);
 				System.out.println("Receive Low Data:" + ss + "||");
 
+				checkserial(ss);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -165,9 +187,47 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 
 	}
 
+	public void sendIoT(String cmd) {
+		Thread t1 = new Thread (new SendIoT(cmd));
+		t1.start();
+	}
+	
+	class SendIoT implements Runnable{
+
+		String cmd;
+		public SendIoT(String cmd) {
+			this.cmd = cmd;
+		}
+
+		@Override
+		public void run() {
+		     byte[]datas=cmd.getBytes();
+		     try {
+				out.write(datas);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+
+
 	public static void main(String args[]) throws IOException {
-		SendAndReceiveSerial ss = new SendAndReceiveSerial("COM6", true);
-		ss.sendSerial("W2810003B010000000000005011", "10003B01");
-		// ss.close();
+
+		SendAndReceiveSerial ss = new SendAndReceiveSerial("COM5", true);
+		
+		Scanner scan = new Scanner(System.in);
+		while(true) {
+			String str = scan.nextLine();
+			ss.sendIoT(str);
+		}
+		//ss.sendSerial("W2810003B010000000000005011", "10"+ "003B01");
+		//ss.sendIoT("s");
+		//ss.close();
 	}
 }
+
+
+
+
+
