@@ -46,10 +46,10 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 				serialPort = (SerialPort) commPort;
 				serialPort.addEventListener(this);
 				serialPort.notifyOnDataAvailable(true);
-				serialPort.setSerialPortParams(921600, // Åë½Å¼Óµµ
-						SerialPort.DATABITS_8, // µ¥ÀÌÅÍ ºñÆ®
-						SerialPort.STOPBITS_1, // stop ºñÆ®
-						SerialPort.PARITY_NONE); // ÆÐ¸®Æ¼
+				serialPort.setSerialPortParams(921600, // ï¿½ï¿½ï¿½Å¼Óµï¿½
+						SerialPort.DATABITS_8, // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ®
+						SerialPort.STOPBITS_1, // stop ï¿½ï¿½Æ®
+						SerialPort.PARITY_NONE); // ï¿½Ð¸ï¿½Æ¼
 				in = serialPort.getInputStream();
 				bin = new BufferedInputStream(in);
 				out = serialPort.getOutputStream();
@@ -82,7 +82,7 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		
 		if (code.equals("U")) {
 			if (sensor.equals("0001")) {
-				System.out.println("¿Âµµ¼¾¼­");
+				System.out.println("ï¿½Âµï¿½ï¿½ï¿½ï¿½ï¿½");
 				double temp = Double.parseDouble(data) / 100;
 				System.out.println(temp);
 			}
@@ -94,13 +94,13 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		String data;
 
 		public SerialWriter() {
-			// can protocol¿¡ Âü¿©, °íÁ¤°ª
+			// can protocolï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			// :canmsg\r
 			this.data = ":G11A9\r";
 		}
 
 		public SerialWriter(String serialData) {
-			// CheckSum Data »ý¼º
+			// CheckSum Data ï¿½ï¿½ï¿½ï¿½
 			this.data = sendDataFormat(serialData);
 		}
 
