@@ -82,7 +82,7 @@ public class Server {
             Msg msg = null;
             try {
                msg = (Msg) oi.readObject();
-               System.out.println(msg.getId()+msg.getMsg());
+               System.out.println("receive:"+msg.getId()+msg.getMsg());
                
                if (msg.getMsg().equals("q")) {
                   throw new Exception();
@@ -143,13 +143,14 @@ public class Server {
             try {
             if(msg.getIps() != null ) {
                for(String ip:msg.getIps()) {
-            	  System.out.println(ip);
+            	  System.out.println("sendor:"+ip);
                   maps.get(ip).writeObject(msg);              
                }
                break; // break로 while을 끝내서 it.next().writeObject(msg); 가 작동되지 않도록 한다
                // broadcast하지 말라고 break;를 거는 것
             }
-               it.next().writeObject(msg);
+            	System.out.println("test3333");
+                it.next().writeObject(msg);
             } catch (IOException e) {
                e.printStackTrace();
             }
