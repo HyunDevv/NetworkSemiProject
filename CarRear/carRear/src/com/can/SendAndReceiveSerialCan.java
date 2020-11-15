@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Random;
 
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
@@ -11,7 +12,7 @@ import gnu.io.SerialPort;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
 
-public class SendAndReceiveSerial implements SerialPortEventListener {
+public class SendAndReceiveSerialCan implements SerialPortEventListener {
 	private BufferedInputStream bin;
 	private InputStream in;
 	private OutputStream out;
@@ -22,7 +23,9 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 	private String rawCanID, rawTotal;
 	// private boolean start = false;
 
-	public SendAndReceiveSerial(String portName, boolean mode) {
+	
+	// Serial-Can í†µì‹ 
+	public SendAndReceiveSerialCan(String portName, boolean mode) {
 		try {
 			if (mode == true) {
 				portIdentifier = CommPortIdentifier.getPortIdentifier(portName);
@@ -45,10 +48,10 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 				serialPort = (SerialPort) commPort;
 				serialPort.addEventListener(this);
 				serialPort.notifyOnDataAvailable(true);
-				serialPort.setSerialPortParams(921600, // Åë½Å¼Óµµ
-						SerialPort.DATABITS_8, // µ¥ÀÌÅÍ ºñÆ®
-						SerialPort.STOPBITS_1, // stop ºñÆ®
-						SerialPort.PARITY_NONE); // ÆĞ¸®Æ¼
+				serialPort.setSerialPortParams(921600, // í†µì‹ ì†ë„
+						SerialPort.DATABITS_8, // ë°ì´í„° ë¹„íŠ¸
+						SerialPort.STOPBITS_1, // stop ë¹„íŠ¸
+						SerialPort.PARITY_NONE); // íŒ¨ë¦¬í‹°
 				in = serialPort.getInputStream();
 				bin = new BufferedInputStream(in);
 				out = serialPort.getOutputStream();
@@ -71,33 +74,18 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		Thread sendTread = new Thread(new SerialWriter(rawTotal));
 		sendTread.start();
 	}
-	
-	public void checkcode(String dataframe) {
-		String code = dataframe.substring(0, 1);
-		String data = dataframe.substring(11);
-		if(code.equals("U")) {
-			if(data.equals("0000000000005020")) {
-				System.out.println("Àú¿Â");
-			}else if(data.equals("0000000000005020")) {
-				System.out.println("»ó¿Â");
-			}else if(data.equals("0000000000005022")) {
-				System.out.println("°í¿Â");
-			}
-		}
-		
-	}
 
 	private class SerialWriter implements Runnable {
 		String data;
 
 		public SerialWriter() {
-			// can protocol¿¡ Âü¿©, °íÁ¤°ª
+			// can protocolì— ì°¸ì—¬, ê³ ì •ê°’
 			// :canmsg\r
 			this.data = ":G11A9\r";
 		}
 
 		public SerialWriter(String serialData) {
-			// CheckSum Data »ı¼º
+			// CheckSum Data create
 			this.data = sendDataFormat(serialData);
 		}
 
@@ -154,9 +142,6 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 
 				String ss = new String(readBuffer);
 				System.out.println("Receive Low Data:" + ss + "||");
-				
-				result = ss.substring(1, 28);
-				checkcode(result);
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -182,10 +167,53 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		}
 
 	}
+	
+	public String sensorPIR() {
+		String result = "";
+		
+		// ì ì™¸ì„  ê°€ìƒ ë°ì´í„°
+		// ì˜ìœ ì•„ íŒë‹¨
+		Random rPIR = new Random();
+		int pir = rPIR.nextInt(10);
+		
+		// pirì´ 0ì¼ ê²½ìš°: PIR ì¸ì‹, ì˜ìœ ì•„ í™•ì¸
+		if(pir == 0) {
+			result = "0000000000005011";
+		}else {
+			result = "0000000000005012";
+		}
+		
+		return result;
+	}
+	
+	public String sensorTemp() {
+		String result = "";
+		
+		// ì˜¨ë„ ê°€ìƒ ë°ì´í„°
+		Random rTemp = new Random();
+		int temp = rTemp.nextInt(10);
+		
+		if(temp < 2) {
+			// ì €ì˜¨
+			result = "0000000000005021";
+		}else if(temp > 7) {
+			// ê³ ì˜¨
+			result = "0000000000005022";
+		}else {
+			// ìƒì˜¨
+			result = "0000000000005020";
+		}
+		
+		return result;
+	}
 
 	public static void main(String args[]) throws IOException {
-		SendAndReceiveSerial ss = new SendAndReceiveSerial("COM6", true);
-		//ss.sendSerial("W2810003B010000000000005011", "10003B01");
-		// ss.close();
+		SendAndReceiveSerialCan ss = new SendAndReceiveSerialCan("COM4", true);
 	}
+
 }
+
+
+
+
+

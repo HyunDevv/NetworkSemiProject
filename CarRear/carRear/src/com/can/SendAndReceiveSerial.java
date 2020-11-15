@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Random;
 
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
@@ -45,10 +46,10 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 				serialPort = (SerialPort) commPort;
 				serialPort.addEventListener(this);
 				serialPort.notifyOnDataAvailable(true);
-				serialPort.setSerialPortParams(921600, // ��żӵ�
-						SerialPort.DATABITS_8, // ������ ��Ʈ
-						SerialPort.STOPBITS_1, // stop ��Ʈ
-						SerialPort.PARITY_NONE); // �и�Ƽ
+				serialPort.setSerialPortParams(921600, // 통신속도
+						SerialPort.DATABITS_8, // 데이터 비트
+						SerialPort.STOPBITS_1, // stop 비트
+						SerialPort.PARITY_NONE); // 패리티
 				in = serialPort.getInputStream();
 				bin = new BufferedInputStream(in);
 				out = serialPort.getOutputStream();
@@ -72,17 +73,29 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		sendTread.start();
 	}
 
+	public void sendcan(String data) {
+		SendAndReceiveSerialCan srcan = new SendAndReceiveSerialCan("COM6", true);
+		
+		// sensor, data에 따라 전송
+		if(data.equals("0")) {
+			srcan.sendSerial("W2810003B010000000000005020", "10003B01");
+		}else if(data.equals("1")) {
+			srcan.sendSerial("W2810003B010000000000005021", "10003B01");
+		}else if(data.equals("2")) {
+			srcan.sendSerial("W2810003B010000000000005022", "10003B01");
+		}
+	}
 	private class SerialWriter implements Runnable {
 		String data;
 
 		public SerialWriter() {
-			// can protocol�� ����, ������
+			// can protocol에 참여, 고정값
 			// :canmsg\r
 			this.data = ":G11A9\r";
 		}
 
 		public SerialWriter(String serialData) {
-			// CheckSum Data ����
+			// CheckSum Data create
 			this.data = sendDataFormat(serialData);
 		}
 
@@ -140,6 +153,7 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 				String ss = new String(readBuffer);
 				System.out.println("Receive Low Data:" + ss + "||");
 
+				sendcan(ss.substring(0, 1));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -164,10 +178,48 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		}
 
 	}
+	
+	public String sensorPIR() {
+		String result = "";
+		
+		// 적외선 가상 데이터
+		// 영유아 판단
+		Random rPIR = new Random();
+		int pir = rPIR.nextInt(10);
+		
+		// pir이 0일 경우: PIR 인식, 영유아 확인
+		if(pir == 0) {
+			result = "0000000000005011";
+		}else {
+			result = "0000000000005012";
+		}
+		
+		return result;
+	}
 
 	public static void main(String args[]) throws IOException {
-		SendAndReceiveSerial ss = new SendAndReceiveSerial("COM6", true);
-		ss.sendSerial("W2810003B010000000000005011", "10003B01");
-		// ss.close();
+		SendAndReceiveSerial ss = new SendAndReceiveSerial("COM4", true);
+		
+		// total = W2810003B0100000000000050nn
+//		String code = "W";
+//		String type = "28";
+//		String canId = "10003B01";
+//		
+//		while(true) {
+//			// 임의값에 따라 데이터 전송
+//			ss.sendSerial(code + type + canId + ss.sensorPIR(), canId);
+//			
+//			try {
+//				Thread.sleep(1000);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//		}
 	}
 }
+
+
+
+
+
