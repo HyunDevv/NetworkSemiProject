@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Scanner;
 
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
@@ -71,20 +72,22 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		Thread sendTread = new Thread(new SerialWriter(rawTotal));
 		sendTread.start();
 	}
-	
+
 	public void checkcode(String dataframe) {
 		String code = dataframe.substring(0, 1);
-		String data = dataframe.substring(11);
-		if(code.equals("U")) {
-			if(data.equals("0000000000005020")) {
-				System.out.println("저온");
-			}else if(data.equals("0000000000005020")) {
-				System.out.println("상온");
-			}else if(data.equals("0000000000005022")) {
-				System.out.println("고온");
+		String type = dataframe.substring(1, 3);
+		String id = dataframe.substring(3, 11);
+		String sensor = dataframe.substring(11, 15);
+		String data = dataframe.substring(15);
+		
+		if (code.equals("U")) {
+			if (sensor.equals("0001")) {
+				System.out.println("온도센서");
+				double temp = Double.parseDouble(data) / 100;
+				System.out.println(temp);
 			}
 		}
-		
+
 	}
 
 	private class SerialWriter implements Runnable {
@@ -154,7 +157,7 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 
 				String ss = new String(readBuffer);
 				System.out.println("Receive Low Data:" + ss + "||");
-				
+
 				result = ss.substring(1, 28);
 				checkcode(result);
 
@@ -185,7 +188,18 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 
 	public static void main(String args[]) throws IOException {
 		SendAndReceiveSerial ss = new SendAndReceiveSerial("COM6", true);
-		//ss.sendSerial("W2810003B010000000000005011", "10003B01");
+		Scanner scan = new Scanner(System.in);
+		while (true) {
+			String str = scan.nextLine();
+			if (str.equals("s")) {
+				ss.sendSerial("W2810003B010000000000005011", "10003B01");
+			}else if (str.equals("t")) {
+				ss.sendSerial("W2810003B010000000000005010", "10003B01");
+			} else if (str.equals("q")) {
+				break;
+			}
+		}
+
 		// ss.close();
 	}
 }
