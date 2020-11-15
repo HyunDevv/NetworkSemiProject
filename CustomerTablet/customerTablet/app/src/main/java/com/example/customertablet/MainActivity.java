@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -15,16 +16,21 @@ import java.net.Socket;
 import java.util.HashMap;
 
 
+
 import com.df.DataFrame;
+
 
 public class MainActivity extends AppCompatActivity {
     TextView tx_temp, tx_setTemp, tx_logTemp, tx_curTemp, tx_logCtl, tx_ctl;
     SeekBar seekBar;
 
+
     // TCP/IP Server
     ServerSocket serverSocket;
-    int serverPort = 5555;
-    HashMap<String, ObjectOutputStream> maps;
+    int serverPort = 5558;
+    Sender sender;
+    ObjectOutputStream oo;
+
 
 
     @Override
@@ -38,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
         tx_logCtl = findViewById(R.id.tx_logCtl);
         tx_ctl = findViewById(R.id.tx_ctl);
         seekBar = findViewById(R.id.seekBar);
+
 
         tx_temp.setText("Temperature Control");
         tx_setTemp.setText("Setting Temperature");
@@ -67,114 +74,136 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // TCP/IP Server Start
+
         try {
-            serverSocket = new ServerSocket(serverPort);
-        } catch (IOException e) {
+            startServer();
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        Log.d("[Server]","Start Server...");
-
-        Runnable r = new Runnable() { // 받으면서 다른 것도 할 수 있도록 Thread 사용
-
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        Socket socket = null;
-                        Log.d("[Server]","Ready Server ...");
-                        socket = serverSocket.accept();
-                        Log.d("[Server]", socket.getInetAddress()+"");
-                        makeOut(socket);
-                        new ServerReceiver(socket).start();
-                    } catch (Exception e) {
-                        //Android Studio Error(Invalid Stream header)
-                        //e.printStackTrace();
-                    }
-                } // end while
-            }
-        };
-        new Thread(r).start();
-
-
-
-
-        // TCP/IP Client
-
-
 
 
     } // End OnCreate
 
 
-    /*
-    TCP/IP SERVER CODE
-     */
+    public void startServer() throws Exception{
+        serverSocket = new ServerSocket(serverPort);
+        Log.d("[Server]", "Server Started.");
 
-    // HashMap maps에 접속 client 정보 삽입
-    public void makeOut(Socket socket) throws IOException {
-        ObjectOutputStream oo;
-        oo = new ObjectOutputStream(socket.getOutputStream());
-        maps.put(socket.getInetAddress().toString(), oo);
-        System.out.println("접속자 수: " + maps.size());
-    }
 
-    public void serverSendDf(DataFrame df) {
-        ServerSender sender = new ServerSender();
-        sender.setDataFrame(df);
-        sender.start();
-    }
-    class ServerSender extends Thread {
-        DataFrame df;
-        public void setDataFrame(DataFrame df) {
-            this.df = df;
-        }
-        @Override
-        public void run() {
-            try {
-                maps.get(df.getIp()).writeObject(df);
-            } catch (IOException e) {
-                e.printStackTrace();
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                while(true){
+                    try {
+                        Socket socket = null;
+                        Log.d("[Server]", "Server Ready..");
+                        socket = serverSocket.accept();
+                        Log.d("[Server]", socket.getInetAddress()+"Connected...");
+                        new Receiver(socket).start();
+
+
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                }
             }
-        }
+        };
+        new Thread(r).start();
     }
 
 
-    class ServerReceiver extends Thread {
+    class Receiver extends Thread {
         Socket socket;
         ObjectInputStream oi;
 
-        public ServerReceiver(Socket socket) throws IOException {
+
+        public Receiver(Socket socket) throws IOException {
             this.socket = socket;
             oi = new ObjectInputStream(this.socket.getInputStream());
+            oo = new ObjectOutputStream(this.socket.getOutputStream());
         }
 
         @Override
         public void run() {
             while (oi != null) {
-                DataFrame df = null;
                 try {
-                    df = (DataFrame) oi.readObject();
-                    Log.d("[Server]", df.getSender()+df.getContents());
-                    serverSendDf(df);
+                    final DataFrame input = (DataFrame) oi.readObject();
+                    Log.d("[Server]", "input: " + input.getSender() + ": " + input.getContents());
+                    sendDataFrame(input, socket);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            String logTemp = tx_logTemp.getText().toString();
+                            tx_logTemp.setText(input.getContents()+"\n"+logTemp);
+                        }
+                    });
+
+
+
 
                 } catch (Exception e) {
-                    maps.remove(socket.getInetAddress().toString());
-                    Log.d("[Server]",socket.getInetAddress() + "..Exited");
+                    Log.d("[Server]", "Receiver 객체 수신 실패");
                     break;
                 }
             } // end while
 
             try {
-                if(oi != null) {
+                if (oi != null) {
+                    Log.d("[Server]", "ObjectInputStream Closed ..");
                     oi.close();
                 }
                 if (socket != null) {
+                    Log.d("[Server]", "Socket Closed ..");
                     socket.close();
                 }
             } catch (Exception e) {
-
+                Log.d("[Server]", "객체 수신 실패 후 InputStream, socket 닫기 실패");
             }
+
+        }
+    }// End Receiver
+
+    public void sendDataFrame(DataFrame df, Socket socket){
+        try {
+            sender = new Sender();
+            Log.d("[Server]", "setDataFrame 실행");
+            sender.setDataFrame(df);
+            Log.d("[Server]", "객체 송신 Thread 호출");
+            sender.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    class Sender extends Thread{
+        DataFrame dataFrame;
+
+        public Sender() {
+
+        }
+
+        public void setDataFrame(DataFrame df){
+            this.dataFrame = df;
+            Log.d("[Server]", "setDataFrame 완료");
+        }
+
+        @Override
+        public void run() {
+            try {
+                Log.d("[Server]", "Sender Thread 실행");
+                dataFrame.setIp("192.168.35.149");
+                dataFrame.setSender("[TabletServer]");
+                Log.d("[Server]", "테스트 목적 Client로 목적지 재설정");
+
+                oo.writeObject(dataFrame);
+                Log.d("[Server]", "Sender 객체 전송.. "+dataFrame.getIp()+"주소로 "+dataFrame.getContents());
+                Log.d("[Server]", "Sender 객체 전송 성공");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
         }
     }
 }
