@@ -6,8 +6,10 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
@@ -21,9 +23,11 @@ public class Server {
    HashMap<String, ObjectOutputStream> maps;
 
    ServerSocket serverSocket;
-
-//   Receiver receiver;
    
+   // 현재 시간 표시 설정
+   SimpleDateFormat format = new SimpleDateFormat ( "yyyy-MM-dd HH:mm:ss");
+   Date time = new Date();
+   String timeNow = format.format(time);
 
    public Server() {
    }
@@ -34,7 +38,10 @@ public class Server {
    }
 
    public void startServer() throws Exception {
-      serverSocket = new ServerSocket(port);
+	   
+	   System.out.println(timeNow);
+	   
+	  serverSocket = new ServerSocket(port);
       System.out.println("Start Server...");
 
       Runnable r = new Runnable() { // 받으면서 다른 것도 할 수 있도록 Thread 사용
@@ -45,8 +52,8 @@ public class Server {
                try {
                   Socket socket = null;
                   System.out.println("Ready Server ...");
-                  socket = serverSocket.accept();
-                  System.out.println(socket.getInetAddress());
+                  socket = serverSocket.accept(); // 여기서 연결 될 때까지 대기
+                  System.out.println("Socket connected:"+socket.getInetAddress()+" "+timeNow); //연결된 IP표시
                   makeOut(socket);
                   new Receiver(socket).start();
                } catch (Exception e) {
@@ -81,8 +88,8 @@ public class Server {
          while (oi != null) {
             Msg msg = null;
             try {
-               msg = (Msg) oi.readObject();
-               System.out.println("receive:"+msg.getId()+msg.getMsg());
+               msg = (Msg) oi.readObject(); // 여기서 read가 안되면 연결이 되지 않은 것이다 -> Exception
+               System.out.println("Receive:"+msg.getId()+msg.getMsg());
                
                if (msg.getMsg().equals("q")) {
                   throw new Exception();
@@ -102,7 +109,7 @@ public class Server {
                sendMsg(msg);
             } catch (Exception e) {
                maps.remove(socket.getInetAddress().toString());
-               System.out.println(socket.getInetAddress() + "..Exited");
+               System.out.println(socket.getInetAddress() + "..Exited "+timeNow);
                System.out.println("접속자수: " + maps.size());
                break;
             }   
@@ -141,15 +148,16 @@ public class Server {
                cols.iterator();
          while(it.hasNext()) {
             try {
+            // msg의 Ips가 하나라도 있으면	
             if(msg.getIps() != null ) {
                for(String ip:msg.getIps()) {
-            	  System.out.println("sendor:"+ip);
+            	  System.out.println("Sendor:"+ip);
                   maps.get(ip).writeObject(msg);              
                }
                break; // break로 while을 끝내서 it.next().writeObject(msg); 가 작동되지 않도록 한다
                // broadcast하지 말라고 break;를 거는 것
             }
-            	System.out.println("test3333");
+            	System.out.println("test3:Ips is null");
                 it.next().writeObject(msg);
             } catch (IOException e) {
                e.printStackTrace();

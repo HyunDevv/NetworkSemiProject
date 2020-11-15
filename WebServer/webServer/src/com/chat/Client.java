@@ -76,7 +76,6 @@ public class Client {
 			} else {
 				ArrayList<String> ips = new ArrayList<>();
 				//ips.add("/192.168.35.2");
-				///////////////////////////////
 				msg = new Msg(ips, id, ms);
 			}
 			sender.setMsg(msg);

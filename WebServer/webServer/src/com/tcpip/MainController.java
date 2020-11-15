@@ -103,7 +103,7 @@ public class MainController {
 //		System.out.println("phone Send End...");
 //	}
 	
-	@RequestMapping("/sendmtoiot.mc") // 筌롫뗄�뻻筌욑옙 占쎌읈占쎈꽊 to IoT
+	@RequestMapping("/sendmtoiot.mc") 
 	public ModelAndView sendMtoIoT(ModelAndView mv, String iot_id, String iot_contents) {
 		System.out.println("Send Message to IoT Start...");
 		System.out.println(iot_id+"로 "+iot_contents+"을 전송");
