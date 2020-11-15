@@ -37,146 +37,149 @@ public class MainController {
 		mv.setViewName("main");
 		return mv;
 	}
+	
 	@RequestMapping("/iot.mc")
 	public void iot() {
 		System.out.println("IoT Send Start...");
-		client.sendTarget("/192.168.0.103", "100");
+		client.sendTarget("/15.165.195.250", "100");
 	}
-	@RequestMapping("/phone.mc")
-	public void phone() {
-		System.out.println("phone Send Start...");
-		
-		URL url = null;
-		try {
-			url = new URL("https://fcm.googleapis.com/fcm/send");
-		} catch (MalformedURLException e) {
-			System.out.println("Error while creating Firebase URL | MalformedURLException");
-			e.printStackTrace();
-		}
-		HttpURLConnection conn = null;
-		try {
-			conn = (HttpURLConnection) url.openConnection();
-		} catch (IOException e) {
-			System.out.println("Error while createing connection with Firebase URL | IOException");
-			e.printStackTrace();
-		}
-		conn.setUseCaches(false);
-		conn.setDoInput(true);
-		conn.setDoOutput(true);
-		conn.setRequestProperty("Content-Type", "application/json");
-
-		// set my firebase server key
-		conn.setRequestProperty("Authorization", "key="
-				+ "AAAAK89FyMY:APA91bGxNwkQC6S_QQAKbn3COepWgndhyyjynT8ZvIEarTaGpEfMA1SPFo-ReN8b9uO21R1OfSOpNhfYbQaeohKP_sKzsgVTxu7K5tmzcjEfHzlgXRFrB1r0uqhfxLp4p836lbKw_iaN");
-
-		// create notification message into JSON format
-		JSONObject message = new JSONObject();
-		message.put("to", "/topics/car");
-		message.put("priority", "high");
-		
-		JSONObject notification = new JSONObject();
-		notification.put("title", "title1");
-		notification.put("body", "body1");
-		message.put("notification", notification);
-		
-		JSONObject data = new JSONObject();
-		data.put("control", "control1");
-		data.put("data", 100);
-		message.put("data", data);
-
-
-		try {
-			OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
-			System.out.println("FCM �쟾�넚:"+message.toString());
-			out.write(message.toString());
-			out.flush();
-			conn.getInputStream();
-			System.out.println("OK...............");
-
-		} catch (IOException e) {
-			System.out.println("Error while writing outputstream to firebase sending to ManageApp | IOException");
-			e.printStackTrace();
-		}	
-		
-		System.out.println("phone Send End...");
-	}
-	@RequestMapping("/sendmtoiot.mc") // 硫붿떆吏� �쟾�넚 to IoT
+	
+//	@RequestMapping("/phone.mc")
+//	public void phone() {
+//		System.out.println("phone Send Start...");
+//		
+//		URL url = null;
+//		try {
+//			url = new URL("https://fcm.googleapis.com/fcm/send");
+//		} catch (MalformedURLException e) {
+//			System.out.println("Error while creating Firebase URL | MalformedURLException");
+//			e.printStackTrace();
+//		}
+//		HttpURLConnection conn = null;
+//		try {
+//			conn = (HttpURLConnection) url.openConnection();
+//		} catch (IOException e) {
+//			System.out.println("Error while createing connection with Firebase URL | IOException");
+//			e.printStackTrace();
+//		}
+//		conn.setUseCaches(false);
+//		conn.setDoInput(true);
+//		conn.setDoOutput(true);
+//		conn.setRequestProperty("Content-Type", "application/json");
+//
+//		// set my firebase server key
+//		conn.setRequestProperty("Authorization", "key="
+//				+ "AAAAK89FyMY:APA91bGxNwkQC6S_QQAKbn3COepWgndhyyjynT8ZvIEarTaGpEfMA1SPFo-ReN8b9uO21R1OfSOpNhfYbQaeohKP_sKzsgVTxu7K5tmzcjEfHzlgXRFrB1r0uqhfxLp4p836lbKw_iaN");
+//
+//		// create notification message into JSON format
+//		JSONObject message = new JSONObject();
+//		message.put("to", "/topics/car");
+//		message.put("priority", "high");
+//		
+//		JSONObject notification = new JSONObject();
+//		notification.put("title", "title1");
+//		notification.put("body", "body1");
+//		message.put("notification", notification);
+//		
+//		JSONObject data = new JSONObject();
+//		data.put("control", "control1");
+//		data.put("data", 100);
+//		message.put("data", data);
+//
+//
+//		try {
+//			OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
+//			System.out.println("FCM 占쎌읈占쎈꽊:"+message.toString());
+//			out.write(message.toString());
+//			out.flush();
+//			conn.getInputStream();
+//			System.out.println("OK...............");
+//
+//		} catch (IOException e) {
+//			System.out.println("Error while writing outputstream to firebase sending to ManageApp | IOException");
+//			e.printStackTrace();
+//		}	
+//		
+//		System.out.println("phone Send End...");
+//	}
+	
+	@RequestMapping("/sendmtoiot.mc") // 筌롫뗄�뻻筌욑옙 占쎌읈占쎈꽊 to IoT
 	public ModelAndView sendMtoIoT(ModelAndView mv, String iot_id, String iot_contents) {
 		System.out.println("Send Message to IoT Start...");
-		System.out.println(iot_id+"�뿉寃� "+iot_contents+"�쟾�넚.");
+		System.out.println(iot_id+"로 "+iot_contents+"을 전송");
 		client.sendTarget(iot_id, iot_contents);
 		mv.setViewName("main");
 		return mv;
 	}
-	@RequestMapping("/car.mc")
-	   public void car(HttpServletRequest request) {
-	      String ip = request.getParameter("ip");
-	      String sensor = request.getParameter("sensor");
-	      String msg = ip+" "+sensor;
-	      //client.sendTarget("/192.168.0.64",msg);
-	      
-	      System.out.println(msg+"test!!!!!");
-	      
-	      // 紐낅졊 肄붾뱶 �솗�씤
-	      // �깉濡쒖슫 �닔�떊 硫붿떆吏��씪 寃쎌슦�뿉留� FCM �쟾�넚
-	      String code = request.getParameter("code");
-	      //if(code.equals("U")) {
-			// FCM setting
-			URL url = null;
-			try {
-				url = new URL("https://fcm.googleapis.com/fcm/send");
-			} catch (MalformedURLException e) {
-				System.out.println("Error while creating Firebase URL | MalformedURLException");
-				e.printStackTrace();
-			}
-			HttpURLConnection conn = null;
-			try {
-				conn = (HttpURLConnection) url.openConnection();
-			} catch (IOException e) {
-				System.out.println("Error while createing connection with Firebase URL | IOException");
-				e.printStackTrace();
-			}
-			conn.setUseCaches(false);
-			conn.setDoInput(true);
-			conn.setDoOutput(true);
-			conn.setRequestProperty("Content-Type", "application/json");
-
-			// set my firebase server key
-			conn.setRequestProperty("Authorization", "key="
-					+ "AAAAK89FyMY:APA91bGxNwkQC6S_QQAKbn3COepWgndhyyjynT8ZvIEarTaGpEfMA1SPFo-ReN8b9uO21R1OfSOpNhfYbQaeohKP_sKzsgVTxu7K5tmzcjEfHzlgXRFrB1r0uqhfxLp4p836lbKw_iaN");
-			
-
-			// create notification message into JSON format
-			JSONObject message = new JSONObject();
-			message.put("to", "/topics/car");
-			message.put("priority", "high");
-			
-			JSONObject notification = new JSONObject();
-			notification.put("title", ip);
-			notification.put("body", sensor);
-			message.put("notification", notification);
-			
-			JSONObject data = new JSONObject();
-			data.put("control", "control1");
-			data.put("data", 100);
-			message.put("data", data);
-
-			try {
-				OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
-				out.write(message.toString());
-				out.flush();
-				conn.getInputStream();
-				System.out.println("OK...............");
-
-			} catch (IOException e) {
-				System.out.println("Error while writing outputstream to firebase sending to ManageApp | IOException");
-				e.printStackTrace();
-			}
-	      //}
-	   }
+	
+//	@RequestMapping("/car.mc")
+//	   public void car(HttpServletRequest request) {
+//	      String ip = request.getParameter("ip");
+//	      String sensor = request.getParameter("sensor");
+//	      String msg = ip+" "+sensor;
+//	      
+//	      System.out.println(msg+"test!!!!!");
+//	      
+//	      // 筌뤿굝議� �굜遺얜굡 占쎌넇占쎌뵥
+//	      // 占쎄퉱嚥≪뮇�뒲 占쎈땾占쎈뻿 筌롫뗄�뻻筌욑옙占쎌뵬 野껋럩�뒭占쎈퓠筌랃옙 FCM 占쎌읈占쎈꽊
+//	      String code = request.getParameter("code");
+//	      //if(code.equals("U")) {
+//			// FCM setting
+//			URL url = null;
+//			try {
+//				url = new URL("https://fcm.googleapis.com/fcm/send");
+//			} catch (MalformedURLException e) {
+//				System.out.println("Error while creating Firebase URL | MalformedURLException");
+//				e.printStackTrace();
+//			}
+//			HttpURLConnection conn = null;
+//			try {
+//				conn = (HttpURLConnection) url.openConnection();
+//			} catch (IOException e) {
+//				System.out.println("Error while createing connection with Firebase URL | IOException");
+//				e.printStackTrace();
+//			}
+//			conn.setUseCaches(false);
+//			conn.setDoInput(true);
+//			conn.setDoOutput(true);
+//			conn.setRequestProperty("Content-Type", "application/json");
+//
+//			// set my firebase server key
+//			conn.setRequestProperty("Authorization", "key="
+//					+ "AAAAK89FyMY:APA91bGxNwkQC6S_QQAKbn3COepWgndhyyjynT8ZvIEarTaGpEfMA1SPFo-ReN8b9uO21R1OfSOpNhfYbQaeohKP_sKzsgVTxu7K5tmzcjEfHzlgXRFrB1r0uqhfxLp4p836lbKw_iaN");
+//			
+//
+//			// create notification message into JSON format
+//			JSONObject message = new JSONObject();
+//			message.put("to", "/topics/car");
+//			message.put("priority", "high");
+//			
+//			JSONObject notification = new JSONObject();
+//			notification.put("title", ip);
+//			notification.put("body", sensor);
+//			message.put("notification", notification);
+//			
+//			JSONObject data = new JSONObject();
+//			data.put("control", "control1");
+//			data.put("data", 100);
+//			message.put("data", data);
+//
+//			try {
+//				OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
+//				out.write(message.toString());
+//				out.flush();
+//				conn.getInputStream();
+//				System.out.println("OK...............");
+//
+//			} catch (IOException e) {
+//				System.out.println("Error while writing outputstream to firebase sending to ManageApp | IOException");
+//				e.printStackTrace();
+//			}
+//	      //}
+//	   }
 	
 	
-	@RequestMapping("/fcmPhone.mc") // 채팅을 받았을 때
+	@RequestMapping("/fcmPhone.mc") // 梨꾪똿�쓣 諛쏆븯�쓣 �븣
 	public ModelAndView inputChat(ModelAndView mv, String fcmContents) throws IOException {
 
 		System.out.println(fcmContents+"라는 내용으로 FCM 전송!!!!");
