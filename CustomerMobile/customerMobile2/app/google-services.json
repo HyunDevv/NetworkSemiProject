@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "225668218807",
+    "firebase_url": "https://networksemiproject.firebaseio.com",
+    "project_id": "networksemiproject",
+    "storage_bucket": "networksemiproject.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:225668218807:android:e2676afcfabbec5490f232",
+        "android_client_info": {
+          "package_name": "com.example.tcpip"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "225668218807-edvuvm4f45pb2ouvnqu5clt17ovbqrm7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBI3s4dvPRIa1selgHfojyEQrbvxzRmzO8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "225668218807-edvuvm4f45pb2ouvnqu5clt17ovbqrm7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
