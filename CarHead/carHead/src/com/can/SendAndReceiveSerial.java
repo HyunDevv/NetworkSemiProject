@@ -6,6 +6,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Scanner;
 
+import com.df.DataFrame;
+import com.tcpip.Client;
+
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
 import gnu.io.SerialPort;
@@ -22,6 +25,11 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 	private String result;
 	private String rawCanID, rawTotal;
 	// private boolean start = false;
+	private Client client;
+	
+	public void setClient(Client client) {
+		this.client = client;
+	}
 
 	public SendAndReceiveSerial(String portName, boolean mode) {
 		try {
@@ -41,6 +49,7 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		if (portIdentifier.isCurrentlyOwned()) {
 			System.out.println("Error: Port is currently in use");
 		} else {
+			// CarHead - CarRear: 캔 통신 포트 5001
 			commPort = portIdentifier.open(this.getClass().getName(), 5001);
 			if (commPort instanceof SerialPort) {
 				serialPort = (SerialPort) commPort;
@@ -73,20 +82,31 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		sendTread.start();
 	}
 
-	public void checkcode(String dataframe) {
-		String code = dataframe.substring(0, 1);
-		String type = dataframe.substring(1, 3);
-		String id = dataframe.substring(3, 11);
-		String sensor = dataframe.substring(11, 15);
-		String data = dataframe.substring(15);
+	// can으로 받은 데이터를 가공
+	public void checkcode(String can) {
+		String code = can.substring(0, 1); // 명령 코드
+		String type = can.substring(1, 3); // 데이터 특성 코드
+		String id = can.substring(3, 11); // CAN ID
+		String sensor = can.substring(11, 15); // 데이터: 센서 정보
+		String data = can.substring(15); // 데이터: 센서 값
+		
+
+		DataFrame df = new DataFrame();
+		if(id.equals("10003B01")) {
+			df.setSender("[CarRear]");
+		}else {
+			df.setSender("[CarHead]");
+		}
 		
 		if (code.equals("U")) {
 			if (sensor.equals("0001")) {
-				System.out.println("온도센서");
 				double temp = Double.parseDouble(data) / 100;
-				System.out.println(temp);
+				String con = "현재 온도: " + temp;
+				df.setContents(con);
 			}
 		}
+		
+		client.sendData(df);
 
 	}
 

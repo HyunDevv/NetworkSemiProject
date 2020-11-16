@@ -47,6 +47,7 @@ public class SendAndReceiveSerialCan implements SerialPortEventListener {
 		if (portIdentifier.isCurrentlyOwned()) {
 			System.out.println("Error: Port is currently in use");
 		} else {
+			// CarHead - CarRear: 캔 통신 포트 5001
 			commPort = portIdentifier.open(this.getClass().getName(), 5001);
 			if (commPort instanceof SerialPort) {
 				serialPort = (SerialPort) commPort;

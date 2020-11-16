@@ -47,7 +47,8 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		if (portIdentifier.isCurrentlyOwned()) {
 			System.out.println("Error: Port is currently in use");
 		} else {
-			commPort = portIdentifier.open(this.getClass().getName(), 5000);
+			// CarRear - Arduino: 시리얼 통신 포트 5002
+			commPort = portIdentifier.open(this.getClass().getName(), 5002);
 			if (commPort instanceof SerialPort) {
 				serialPort = (SerialPort) commPort;
 				serialPort.addEventListener(this);
