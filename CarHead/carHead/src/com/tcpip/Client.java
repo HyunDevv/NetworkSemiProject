@@ -48,31 +48,28 @@ public class Client {
 	
 	
 	// 데이터 전송 함수 -> 이 함수에 날아오는 센서값을 인자로 넣고 df.setContents로 넣어서 태블릿으로 보내야 합니다.
-	public void sendData() {
-		while(true) {
-			DataFrame df = new DataFrame();
-			df.setSender("[CarHead]");
+	public void sendData(DataFrame df) {
+//		while(true) {
 			df.setIp("192.168.35.37");
 			
 			//Test용 Random 값 생성하여 setContents
-			Random r = new Random();
-			int val = r.nextInt(8)+15;
-			String con = String.valueOf(val);
-			df.setContents(con);
-			
+//			Random r = new Random();
+//			int val = r.nextInt(8)+15;
+//			String con = String.valueOf(val);
+//			df.setContents(con);
 
+			System.out.println("data 전송: " + df.getIp());
+			System.out.println(df.getSender() + df.getContents());
 			
 			sender.setDf(df);
 			System.out.println("[Client Sender Thread] Thread 생성");
 			new Thread(sender).start();
-			try {
-				Thread.sleep(10000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-
-        }
-
+//			try {
+//				Thread.sleep(10000);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+//        }
 	}
 	
 	class Sender implements Runnable{
@@ -171,7 +168,7 @@ public class Client {
 		Client client = new Client("192.168.35.37",5558);
 		try {
 			client.connect();
-			client.sendData();
+			//client.sendData();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
