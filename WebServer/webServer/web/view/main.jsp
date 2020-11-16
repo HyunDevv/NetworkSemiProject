@@ -47,7 +47,7 @@ $(document).ready(function(){
 </form>
 <h3>Send Control Message to IoT</h3>
 <form action="sendmtoiot.mc" method="post">
-	<input type="text" name="iot_id" id="iot_id" placeholder="타겟IP를 입력하세요">
+	<input type="text" name="iot_ip" id="iot_ip" placeholder="타겟IP를 입력하세요">
 	<input type="text" name="iot_contents" id="iot_contents"placeholder="보낼내용을 입력하세요">
 	<button onclick="alert('메시지를 보냈습니다.')" type="submit">보내기</button>
 </form>

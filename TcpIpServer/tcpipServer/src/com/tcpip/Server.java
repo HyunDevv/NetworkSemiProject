@@ -5,6 +5,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import com.df.DataFrame;
 
@@ -13,6 +15,11 @@ public class Server {
     Sender sender;
     ObjectOutputStream oo;
     int serverPort;
+    
+    // 현재 시간 표시 설정
+    SimpleDateFormat format = new SimpleDateFormat ( "yyyy-MM-dd HH:mm:ss");
+    Date time = new Date();
+    String timeNow = format.format(time);
     
 	public Server() {
 		
@@ -36,7 +43,7 @@ public class Server {
                         Socket socket = null;
                         System.out.println("Server Ready..");
                         socket = serverSocket.accept();
-                        System.out.println(socket.getInetAddress()+" Connected...");
+                        System.out.println("Connected:"+socket.getInetAddress()+" "+timeNow); //연결된 IP표시
                         new Receiver(socket).start();
 
 
@@ -67,17 +74,18 @@ public class Server {
         public void run() {
             while (oi != null) {
                 try {
-                    final DataFrame input = (DataFrame) oi.readObject();
+                    DataFrame input = (DataFrame) oi.readObject();
                     System.out.println("[DataFrame 수신] " + input.getSender() + ": " + input.getContents());
                     
                     // 필요할 경우 사용
-                    //sendDataFrame(input, socket);
+                    sendDataFrame(input);
                    
 
 
 
                 } catch (Exception e) {
-                	System.out.println("Receiver 객체 수신 실패");
+                	e.printStackTrace();
+                	System.out.println(socket.getInetAddress() +" :Receiver 객체 수신 실패 "+timeNow);
                     break;
                 }
             } // end while
@@ -98,7 +106,7 @@ public class Server {
         }
     }// End Receiver
 
-    public void sendDataFrame(DataFrame df, Socket socket){
+    public void sendDataFrame(DataFrame df){
         try {
             sender = new Sender();
             System.out.println("setDataFrame 실행");

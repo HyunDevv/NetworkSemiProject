@@ -19,6 +19,31 @@ public class Client {
 	String id;
 	
 	
+	
+	public String getIp() {
+		return ip;
+	}
+
+	public void setIp(String ip) {
+		this.ip = ip;
+	}
+
+	public Sender getSender() {
+		return sender;
+	}
+
+	public void setSender(Sender sender) {
+		this.sender = sender;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
 	public Client() {
 	}
 	
@@ -56,31 +81,11 @@ public class Client {
 	
 	
 	// 데이터 전송 함수 -> 이 함수에 날아오는 센서값을 인자로 넣고 df.setContents로 넣어서 태블릿으로 보내야 합니다.
-	public void sendData() {
-		while(true) {
-			DataFrame df = new DataFrame();
-			df.setSender(id);
-			df.setIp(ip);
-			
-			
-			//Test용 Random 값 생성하여 setContents
-			Random r = new Random();
-			int val = r.nextInt(8)+15;
-			String con = String.valueOf(val);
-			df.setContents(con);
-			
-
-			
+	public void sendData(DataFrame df) {
+		
 			sender.setDf(df);
 			System.out.println("[Client Sender Thread] Thread 생성");
 			new Thread(sender).start();
-			try {
-				Thread.sleep(10000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-
-        }
 
 	}
 	
@@ -177,10 +182,10 @@ public class Client {
 
 
 	public static void main(String[] args) {
-		Client client = new Client("192.168.35.37",5558);
+		Client client = new Client("15.165.195.250",5555);
 		try {
 			client.connect();
-			client.sendData();
+			//client.sendData();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
