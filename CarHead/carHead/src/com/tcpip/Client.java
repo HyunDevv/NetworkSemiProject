@@ -16,6 +16,7 @@ public class Client {
 	Socket socket;
 	Sender sender;
 	Receiver receiver;
+	String id;
 	
 	public Client() {
 	}
@@ -24,6 +25,12 @@ public class Client {
 		this.ip = ip;
 		this.port = port;
 		
+	}
+	public Client(String ip, int port, String id) {
+		super();
+		this.ip = ip;
+		this.port = port;
+		this.id = id;
 	}
 	
 	
@@ -51,8 +58,8 @@ public class Client {
 	public void sendData() {
 		while(true) {
 			DataFrame df = new DataFrame();
-			df.setSender("[CarHead]");
-			df.setIp("192.168.35.37");
+			df.setSender(id);
+			df.setIp(ip);
 			
 			//Test용 Random 값 생성하여 setContents
 			Random r = new Random();
@@ -135,7 +142,7 @@ public class Client {
 
 		@Override
 		public void run() {
-			System.out.println("Clientㄴ");
+			
 			// 수신 inputStream이 비어 있지 않은 경우 실행!
 			while(oi != null) {
 				DataFrame df = null;
@@ -168,10 +175,10 @@ public class Client {
 
 
 	public static void main(String[] args) {
-		Client client = new Client("192.168.35.37",5558);
+		Client client = new Client("192.168.35.37",5558,"[CarHead]");
 		try {
 			client.connect();
-			client.sendData();
+			//client.sendData();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

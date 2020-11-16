@@ -23,7 +23,7 @@ public class MainController {
 	
 	Client client;
 	public MainController() {
-		client = new Client("15.165.195.250",5555,"[WEB]");
+		client = new Client("192.168.35.37",5558,"[WEBServer]");
 		try {
 			client.connect();
 		} catch (IOException e) {
@@ -41,7 +41,7 @@ public class MainController {
 	@RequestMapping("/iot.mc")
 	public void iot() {
 		System.out.println("IoT Send Start...");
-		client.sendTarget("/15.165.195.250", "100");
+		client.sendData();
 	}
 	
 //	@RequestMapping("/phone.mc")
@@ -107,7 +107,7 @@ public class MainController {
 	public ModelAndView sendMtoIoT(ModelAndView mv, String iot_id, String iot_contents) {
 		System.out.println("Send Message to IoT Start...");
 		System.out.println(iot_id+"로 "+iot_contents+"을 전송");
-		client.sendTarget(iot_id, iot_contents);
+		client.sendData();
 		mv.setViewName("main");
 		return mv;
 	}
