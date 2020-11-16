@@ -16,6 +16,7 @@ public class Client {
 	Socket socket;
 	Sender sender;
 	Receiver receiver;
+	String id;
 	
 	public Client() {
 	}
@@ -24,6 +25,12 @@ public class Client {
 		this.ip = ip;
 		this.port = port;
 		
+	}
+	public Client(String ip, int port, String id) {
+		super();
+		this.ip = ip;
+		this.port = port;
+		this.id = id;
 	}
 	
 	
@@ -48,9 +55,17 @@ public class Client {
 	
 	
 	// 데이터 전송 함수 -> 이 함수에 날아오는 센서값을 인자로 넣고 df.setContents로 넣어서 태블릿으로 보내야 합니다.
+<<<<<<< HEAD
 	public void sendData(DataFrame df) {
 //		while(true) {
 			df.setIp("192.168.35.37");
+=======
+	public void sendData() {
+		while(true) {
+			DataFrame df = new DataFrame();
+			df.setSender(id);
+			df.setIp(ip);
+>>>>>>> 3b6befa895b5c2ecd9477f58b34bbfef216e6159
 			
 			//Test용 Random 값 생성하여 setContents
 //			Random r = new Random();
@@ -132,7 +147,7 @@ public class Client {
 
 		@Override
 		public void run() {
-			System.out.println("Clientㄴ");
+			
 			// 수신 inputStream이 비어 있지 않은 경우 실행!
 			while(oi != null) {
 				DataFrame df = null;
@@ -165,7 +180,7 @@ public class Client {
 
 
 	public static void main(String[] args) {
-		Client client = new Client("192.168.35.37",5558);
+		Client client = new Client("192.168.35.37",5558,"[CarHead]");
 		try {
 			client.connect();
 			//client.sendData();

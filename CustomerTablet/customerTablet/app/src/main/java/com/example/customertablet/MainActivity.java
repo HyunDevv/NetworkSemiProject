@@ -4,7 +4,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -13,7 +12,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
+
 
 
 
@@ -87,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void startServer() throws Exception{
         serverSocket = new ServerSocket(serverPort);
-        Log.d("[Server]", "Server Started.");
+
 
 
         Runnable r = new Runnable() {
@@ -193,9 +192,9 @@ public class MainActivity extends AppCompatActivity {
         public void run() {
             try {
                 Log.d("[Server]", "Sender Thread 실행");
-                dataFrame.setIp("192.168.35.149");
-                dataFrame.setSender("[TabletServer]");
-                Log.d("[Server]", "테스트 목적 Client로 목적지 재설정");
+                //dataFrame.setIp("192.168.35.149");
+                //dataFrame.setSender("[TabletServer]");
+                //Log.d("[Server]", "테스트 목적 Client로 목적지 재설정");
 
                 oo.writeObject(dataFrame);
                 Log.d("[Server]", "Sender 객체 전송.. "+dataFrame.getIp()+"주소로 "+dataFrame.getContents());
