@@ -46,10 +46,10 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 				serialPort = (SerialPort) commPort;
 				serialPort.addEventListener(this);
 				serialPort.notifyOnDataAvailable(true);
-				serialPort.setSerialPortParams(921600, // ���żӵ�
-						SerialPort.DATABITS_8, // ������ ��Ʈ
-						SerialPort.STOPBITS_1, // stop ��Ʈ
-						SerialPort.PARITY_NONE); // �и�Ƽ
+				serialPort.setSerialPortParams(921600, // 통신속도
+						SerialPort.DATABITS_8, // 데이터 비트
+						SerialPort.STOPBITS_1, // stop 비트
+						SerialPort.PARITY_NONE); // 패리티
 				in = serialPort.getInputStream();
 				bin = new BufferedInputStream(in);
 				out = serialPort.getOutputStream();
@@ -82,7 +82,7 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		
 		if (code.equals("U")) {
 			if (sensor.equals("0001")) {
-				System.out.println("�µ�����");
+				System.out.println("온도센서");
 				double temp = Double.parseDouble(data) / 100;
 				System.out.println(temp);
 			}
@@ -94,13 +94,13 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		String data;
 
 		public SerialWriter() {
-			// can protocol�� ����, ������
+			// can protocol에 참여, 고정값
 			// :canmsg\r
 			this.data = ":G11A9\r";
 		}
 
 		public SerialWriter(String serialData) {
-			// CheckSum Data ����
+			// CheckSum Data 생성
 			this.data = sendDataFormat(serialData);
 		}
 
