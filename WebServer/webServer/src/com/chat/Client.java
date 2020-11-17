@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Random;
 
 import com.df.DataFrame;
@@ -182,7 +183,9 @@ public class Client {
 
 
 	public static void main(String[] args) {
-		Client client = new Client("192.168.35.37",5555);
+
+		Client client = new Client("192.168.35.37",5558);
+
 		try {
 			client.connect();
 //			client.sendData();
