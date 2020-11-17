@@ -17,13 +17,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.chat.Client;
+import com.df.DataFrame;
 
 @Controller
 public class MainController {
 	
 	Client client;
+	
 	public MainController() {
-		client = new Client("192.168.0.113",5558,"[WEBServer]");
+
+		client = new Client("192.168.0.113",5558,"WEBServer");
 //		try {
 //			client.connect();
 //			client.sendData();
@@ -31,6 +34,7 @@ public class MainController {
 //			e.printStackTrace();
 //		}
 	}
+
 	
 	@RequestMapping("/main.mc")
 	public ModelAndView main() {
@@ -42,7 +46,7 @@ public class MainController {
 	@RequestMapping("/iot.mc")
 	public void iot() {
 		System.out.println("IoT Send Start...");
-		client.sendData();
+		//client.sendData();
 	}
 	
 //	@RequestMapping("/phone.mc")
@@ -105,21 +109,27 @@ public class MainController {
 //	}
 	
 	@RequestMapping("/sendmtoiot.mc") 
-	public ModelAndView sendMtoIoT(ModelAndView mv, String iot_id, String iot_contents) {
+	public ModelAndView sendMtoIoT(ModelAndView mv, String iot_ip, String iot_contents) {
 		System.out.println("Send Message to IoT Start...");
-		System.out.println(iot_id+"로 "+iot_contents+"을 전송");
-		client.sendData();
+		System.out.println(iot_ip+"로 "+iot_contents+"을 전송");
+		DataFrame df = new DataFrame(iot_ip,client.getId(),iot_contents);
+		client.sendData(df);
 		mv.setViewName("main");
 		return mv;
 	}
 	
-//	@RequestMapping("/car.mc")
-//	   public void car(HttpServletRequest request) {
-//	      String ip = request.getParameter("ip");
-//	      String sensor = request.getParameter("sensor");
-//	      String msg = ip+" "+sensor;
-//	      
-//	      System.out.println(msg+"test!!!!!");
+	@RequestMapping("/car.mc")
+	   public void car(HttpServletRequest request) {
+	      String ip = request.getParameter("ip");
+	      String sensor = request.getParameter("sensor");
+	      String sender = request.getParameter("sender");
+	      String msg = ip+" "+sensor;
+	      System.out.println(msg+" car.mc test!!!!!");
+	
+	      DataFrame df = new DataFrame(ip,sender,sensor);
+		  client.sendData(df);
+	
+	}
 //	      
 //	      // 筌뤿굝議� �굜遺얜굡 占쎌넇占쎌뵥
 //	      // 占쎄퉱嚥≪뮇�뒲 占쎈땾占쎈뻿 筌롫뗄�뻻筌욑옙占쎌뵬 野껋럩�뒭占쎈퓠筌랃옙 FCM 占쎌읈占쎈꽊

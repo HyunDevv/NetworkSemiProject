@@ -5,7 +5,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+
 import java.util.HashMap;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 
 import com.df.DataFrame;
 
@@ -14,6 +19,11 @@ public class Server {
     Sender sender;
     HashMap<String, ObjectOutputStream> maps = new HashMap<>();
     int serverPort;
+    
+    // 현재 시간 표시 설정
+    SimpleDateFormat format = new SimpleDateFormat ( "yyyy-MM-dd HH:mm:ss");
+    Date time = new Date();
+    String timeNow = format.format(time);
     
 	public Server() {
 		
@@ -37,7 +47,7 @@ public class Server {
                         Socket socket = null;
                         System.out.println("Server Ready..");
                         socket = serverSocket.accept();
-                        System.out.println(socket.getInetAddress()+" Connected...");
+                        System.out.println("Connected:"+socket.getInetAddress()+" "+timeNow); //연결된 IP표시
                         new Receiver(socket).start();
 
 
@@ -72,7 +82,7 @@ public class Server {
         public void run() {
             while (oi != null) {
                 try {
-                    final DataFrame input = (DataFrame) oi.readObject();
+                    DataFrame input = (DataFrame) oi.readObject();
                     System.out.println("[DataFrame 수신] " + input.getSender() + ": " + input.getContents());
                     
                     // 필요할 경우 사용
@@ -84,6 +94,9 @@ public class Server {
                 } catch (Exception e) {
                 	maps.remove(socket.getInetAddress().toString());
                 	System.out.println(socket.getInetAddress()+" Exit...");
+                	e.printStackTrace();
+                	System.out.println(socket.getInetAddress() +" :Receiver 객체 수신 실패 "+timeNow);
+
                     break;
                 }
             } // end while
@@ -115,6 +128,8 @@ public class Server {
             e.printStackTrace();
         }
     }
+    
+    
 
     class Sender extends Thread{
         DataFrame dataFrame;
