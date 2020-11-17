@@ -180,7 +180,7 @@ public class Client {
 		Client client = new Client("192.168.35.37",5555);
 		try {
 			client.connect();
-			client.sendData();
+//			client.sendData();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

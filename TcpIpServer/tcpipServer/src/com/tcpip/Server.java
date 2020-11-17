@@ -5,13 +5,14 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
 
 import com.df.DataFrame;
 
 public class Server {
 	ServerSocket serverSocket;
     Sender sender;
-    ObjectOutputStream oo;
+    HashMap<String, ObjectOutputStream> maps = new HashMap<>();
     int serverPort;
     
 	public Server() {
@@ -59,8 +60,12 @@ public class Server {
 
         public Receiver(Socket socket) throws IOException {
             this.socket = socket;
+            ObjectOutputStream oo;
             oi = new ObjectInputStream(this.socket.getInputStream());
             oo = new ObjectOutputStream(this.socket.getOutputStream());
+            
+            maps.put(socket.getInetAddress().toString(), oo);
+            System.out.println("[Server]"+socket.getInetAddress()+"연결되었습니다.");
         }
 
         @Override
@@ -77,7 +82,8 @@ public class Server {
 
 
                 } catch (Exception e) {
-                	System.out.println("Receiver 객체 수신 실패");
+                	maps.remove(socket.getInetAddress().toString());
+                	System.out.println(socket.getInetAddress()+" Exit...");
                     break;
                 }
             } // end while
@@ -130,7 +136,7 @@ public class Server {
                 //dataFrame.setSender("[TabletServer]");
                 //Log.d("[Server]", "테스트 목적 Client로 목적지 재설정");
 
-                oo.writeObject(dataFrame);
+            	maps.get("/"+dataFrame.getIp()).writeObject(dataFrame);
                 System.out.println("Sender 객체 전송.. "+dataFrame.getIp()+"주소로 "+dataFrame.getContents());
                 System.out.println( "Sender 객체 전송 성공");
             } catch (IOException e) {

@@ -23,7 +23,7 @@ public class MainController {
 	
 	Client client;
 	public MainController() {
-		client = new Client("192.168.10.101",5558,"[WEBServer]");
+		client = new Client("192.168.0.113",5558,"[WEBServer]");
 //		try {
 //			client.connect();
 //			client.sendData();
@@ -242,7 +242,7 @@ public class MainController {
 		return mv;
 	}
 	
-	@RequestMapping("/getFromTablet")
+	@RequestMapping("/getFromTablet.mc")
 	public void androidWithRequest(HttpServletRequest request) {
 		System.out.println("출력");
 		String ip = request.getParameter("ip");

@@ -25,6 +25,9 @@ import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 
 
 import com.df.DataFrame;
@@ -42,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
     ServerSocket serverSocket;
     int serverPort = 5558;
     Sender sender;
-    ObjectOutputStream oo;
+    HashMap<String,ObjectOutputStream> maps = new HashMap<>();
 
     // HTTP
     DataFrame dataF;
@@ -95,6 +98,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         try {
+            Log.d("[Server]", "101line startserver");
             startServer();
         } catch (Exception e) {
             e.printStackTrace();
@@ -261,10 +265,7 @@ public class MainActivity extends AppCompatActivity {
         inputStream.close();
         return result;
 
-    }
-
-
-    // End HTTP 통신 Code
+    }// End HTTP 통신 Code
 
 
     /*
@@ -283,6 +284,7 @@ public class MainActivity extends AppCompatActivity {
                         Log.d("[Server]", "Server Ready..");
                         socket = serverSocket.accept();
                         Log.d("[Server]", socket.getInetAddress()+"Connected...");
+
                         new Receiver(socket).start();
 
 
@@ -306,8 +308,12 @@ public class MainActivity extends AppCompatActivity {
 
         public Receiver(Socket socket) throws IOException {
             this.socket = socket;
+            ObjectOutputStream oo;
             oi = new ObjectInputStream(this.socket.getInputStream());
             oo = new ObjectOutputStream(this.socket.getOutputStream());
+
+            maps.put(socket.getInetAddress().toString(),oo);
+            Log.d("[Server]", socket.getInetAddress().toString()+"Client 정보 입력 완료");
         }
 
         @Override
@@ -333,7 +339,9 @@ public class MainActivity extends AppCompatActivity {
 
 
                 } catch (Exception e) {
-                    Log.d("[Server]", "Receiver 객체 수신 실패");
+                    Log.d("[Server]", socket.getInetAddress()+" Exit...");
+                    maps.remove(socket.getInetAddress().toString());
+                    Log.d("[Server]", socket.getInetAddress()+" 정보 삭제 완료");
                     break;
                 }
             } // end while
@@ -387,7 +395,16 @@ public class MainActivity extends AppCompatActivity {
                 //dataFrame.setSender("[TabletServer]");
                 //Log.d("[Server]", "테스트 목적 Client로 목적지 재설정");
 
-                oo.writeObject(dataFrame);
+//                Collection<ObjectOutputStream> cols = maps.values();
+//                Iterator<ObjectOutputStream> it = cols.iterator();
+//
+//                while(it.hasNext()){
+//                    if(dataFrame.getIp()!=null){
+//                        maps.get(dataFrame.getIp()).writeObject(dataFrame);
+//                    }
+//                        break;
+//                }
+                maps.get("/"+dataFrame.getIp()).writeObject(dataFrame);
                 Log.d("[Server]", "Sender 객체 전송.. "+dataFrame.getIp()+"주소로 "+dataFrame.getContents());
                 Log.d("[Server]", "Sender 객체 전송 성공");
             } catch (IOException e) {

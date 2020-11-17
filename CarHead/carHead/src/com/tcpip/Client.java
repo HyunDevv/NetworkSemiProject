@@ -59,7 +59,7 @@ public class Client {
 		while(true) {
 			DataFrame df = new DataFrame();
 			df.setSender(id);
-			df.setIp(ip);
+			df.setIp("192.168.0.149");
 			
 			//Test용 Random 값 생성하여 setContents
 			Random r = new Random();
@@ -175,7 +175,7 @@ public class Client {
 
 
 	public static void main(String[] args) {
-		Client client = new Client("192.168.0.113",5558,"CarHead");
+		Client client = new Client("192.168.0.38",5555,"CarHead");
 		try {
 			client.connect();
 			client.sendData();
