@@ -71,7 +71,7 @@ public class Server {
                     System.out.println("[DataFrame 수신] " + input.getSender() + ": " + input.getContents());
                     
                     // 필요할 경우 사용
-                    //sendDataFrame(input, socket);
+                    sendDataFrame(input);
                    
 
 
@@ -98,7 +98,7 @@ public class Server {
         }
     }// End Receiver
 
-    public void sendDataFrame(DataFrame df, Socket socket){
+    public void sendDataFrame(DataFrame df){
         try {
             sender = new Sender();
             System.out.println("setDataFrame 실행");

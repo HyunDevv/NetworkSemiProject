@@ -175,10 +175,10 @@ public class Client {
 
 
 	public static void main(String[] args) {
-		Client client = new Client("192.168.35.37",5558,"[CarHead]");
+		Client client = new Client("192.168.0.113",5558,"CarHead");
 		try {
 			client.connect();
-			//client.sendData();
+			client.sendData();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -2,21 +2,35 @@ package com.example.customertablet;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
+import android.content.ContentValues;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
-
-
+import java.net.URL;
 
 
 import com.df.DataFrame;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -29,6 +43,12 @@ public class MainActivity extends AppCompatActivity {
     int serverPort = 5558;
     Sender sender;
     ObjectOutputStream oo;
+
+    // HTTP
+    DataFrame dataF;
+    static String strJson = "";
+
+
 
 
 
@@ -83,13 +103,178 @@ public class MainActivity extends AppCompatActivity {
 
     } // End OnCreate
 
+    /*
+        HTTP 통신 Code
+     */
+
+    public String GET(String webUrl, String ip, String sender, String contents){
+        URL url = null;
+        StringBuilder html = new StringBuilder();
+        webUrl += "?ip="+ip+"&sender="+sender+"&contents="+contents;
+        try {
+            url = new URL(webUrl);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            if(con != null){
+                con.setConnectTimeout(10000);
+                con.setUseCaches(false);
+                if(con.getResponseCode() == HttpURLConnection.HTTP_OK){
+                    BufferedReader br = new BufferedReader(
+                            new InputStreamReader(con.getInputStream()));
+                    for(;;){
+                        String line = br.readLine();
+                        if(line == null)break;
+                        html.append(line );
+                        html.append('\n');
+                    }
+                    br.close();
+                }
+                con.disconnect();
+            }
+        }
+        catch(Exception ex){;}
+
+        return html.toString();
+    }
+
+    public static String POST(String url, DataFrame df){
+        InputStream is = null;
+        String result = "";
+        try {
+            URL urlCon = new URL(url);
+            HttpURLConnection httpCon = (HttpURLConnection)urlCon.openConnection();
+
+            String json = "";
+
+            // build jsonObject
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.accumulate("ip", df.getIp());
+            jsonObject.accumulate("sender", df.getSender());
+            jsonObject.accumulate("contents", df.getContents());
+
+            // convert JSONObject to JSON to String
+            json = jsonObject.toString();
+            Log.d("[Server]", "HTTP JSON 생성 후 전송 "+json);
+
+            // Set some headers to inform server about the type of the content
+            httpCon.setRequestProperty("Accept", "application/json");
+            httpCon.setRequestProperty("Content-type", "application/json");
+            httpCon.setRequestMethod("POST");
+
+            // OutputStream으로 POST 데이터를 넘겨주겠다는 옵션.
+            httpCon.setDoOutput(true);
+            // InputStream으로 서버로 부터 응답을 받겠다는 옵션.
+            httpCon.setDoInput(true);
+
+            // JSON 전송
+            OutputStream os = httpCon.getOutputStream();
+            os.write(json.getBytes("utf-8"));
+            os.flush();
+            Log.d("[Server]", "HTTP JSON 전송");
+
+
+            // receive response as inputStream
+            try {
+                is = httpCon.getInputStream();
+                // convert inputstream to string
+                if(is != null) {
+                    result = convertInputStreamToString(is);
+                    Log.d("[Server]", "HTTP 통신 수신: " + result);
+                }
+                else
+                    result = "Did not work!";
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+            finally {
+                httpCon.disconnect();
+            }
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        catch (Exception e) {
+            Log.d("[Server]", e.getLocalizedMessage());
+        }
+
+        return result;
+    }
+
+    public boolean isConnected(){
+        ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Activity.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        if (networkInfo != null && networkInfo.isConnected())
+            return true;
+        else
+            return false;
+    }
+
+    private class HttpAsyncTask extends AsyncTask<String, Void, String> {
+
+        private MainActivity mainAct;
+
+        HttpAsyncTask(MainActivity mainActivity) {
+            this.mainAct = mainActivity;
+        }
+        @Override
+        protected String doInBackground(String... urls) {
+
+            dataF = new DataFrame();
+            dataF.setIp(urls[1]);
+            dataF.setSender(urls[2]);
+            dataF.setContents(urls[3]);
+            Log.d("[Server]", "[AsyncTask Background]"+urls[0]+urls[1]+urls[2]+urls);
+
+//            return POST(urls[0], dataF);
+            return GET(urls[0], urls[1], urls[2], urls[3]);
+        }
+        // onPostExecute displays the results of the AsyncTask.
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            strJson = result;
+            mainAct.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(mainAct, "Received!", Toast.LENGTH_LONG).show();
+                    try {
+                        JSONArray json = new JSONArray(strJson);
+                        mainAct.tx_logCtl.setText(json.toString(1));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+        }
+    }
+
+
+
+    private static String convertInputStreamToString(InputStream inputStream) throws IOException{
+        BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(inputStream));
+        String line = "";
+        String result = "";
+        while((line = bufferedReader.readLine()) != null)
+            result += line;
+
+        inputStream.close();
+        return result;
+
+    }
+
+
+    // End HTTP 통신 Code
+
+
+    /*
+        TCP/IP 통신 Code
+     */
 
     public void startServer() throws Exception{
         serverSocket = new ServerSocket(serverPort);
 
-
-
-        Runnable r = new Runnable() {
+        Runnable r = new Runnable() { // Thread로 동작시켜 다른 일도 할 수 있도록!
             @Override
             public void run() {
                 while(true){
@@ -113,6 +298,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    // TCP/IP Receive CODE
     class Receiver extends Thread {
         Socket socket;
         ObjectInputStream oi;
@@ -139,6 +325,10 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
 
+                    // 받은 DataFrame을 웹서버로 HTTP 전송
+                    // call AsynTask to perform network operation on separate thread
+                    HttpAsyncTask httpTask = new HttpAsyncTask(MainActivity.this);
+                    httpTask.execute("http://192.168.0.38/tcpip/getFromTablet.mc", input.getIp(), input.getSender(), input.getContents());
 
 
 
@@ -164,6 +354,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }// End Receiver
 
+    // TCP/IP Send CODE
     public void sendDataFrame(DataFrame df, Socket socket){
         try {
             sender = new Sender();
@@ -204,5 +395,5 @@ public class MainActivity extends AppCompatActivity {
             }
 
         }
-    }
+    } // End TCP/IP 통신 Code
 }
