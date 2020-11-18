@@ -47,6 +47,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Set;
 
 
 import com.df.DataFrame;
@@ -72,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
     int serverPort = 5558;
     Sender sender;
     HashMap<String,ObjectOutputStream> maps = new HashMap<>();
+
 
     // HTTP
     DataFrame dataF;
@@ -426,7 +428,7 @@ public class MainActivity extends AppCompatActivity {
                     // 받은 DataFrame을 웹서버로 HTTP 전송
                     // call AsynTask to perform network operation on separate thread
                     HttpAsyncTask httpTask = new HttpAsyncTask(MainActivity.this);
-                    httpTask.execute("http://192.168.0.38/tcpip/getFromTablet.mc", input.getIp(), input.getSender(), input.getContents());
+                    httpTask.execute("http://192.168.0.37/webServer/getFromTablet.mc", input.getIp(), input.getSender(), input.getContents());
 
                 } catch (Exception e) {
                     Log.d("[Server]", socket.getInetAddress()+" Exit...");
@@ -470,6 +472,7 @@ public class MainActivity extends AppCompatActivity {
     class Sender extends Thread {
         DataFrame dataFrame;
 
+
         public Sender() {
 
         }
@@ -486,9 +489,12 @@ public class MainActivity extends AppCompatActivity {
                 //dataFrame.setIp("192.168.35.149");
                 //dataFrame.setSender("[TabletServer]");
                 //Log.d("[Server]", "테스트 목적 Client로 목적지 재설정");
-
-
-                maps.get("/"+dataFrame.getIp()).writeObject(dataFrame);
+                if(maps.get("/"+dataFrame.getIp())!= null){
+                    maps.get("/"+dataFrame.getIp()).writeObject(dataFrame);
+                    Set<String> set = maps.keySet();
+                    set.
+                    set.toString();
+                }
                 Log.d("[Server]", "Sender 객체 전송.. "+dataFrame.getIp()+"주소로 "+dataFrame.getContents());
 
                 Log.d("[Server]", "Sender 객체 전송 성공");

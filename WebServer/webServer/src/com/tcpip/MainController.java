@@ -27,13 +27,15 @@ public class MainController {
 	public MainController() {
 
 		client = new Client("192.168.0.113",5558,"WEBServer");
-//		try {
-//			client.connect();
+		try {
+			client.connect();
 //			client.sendData();
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
+
+		
 
 	
 	@RequestMapping("/main.mc")
