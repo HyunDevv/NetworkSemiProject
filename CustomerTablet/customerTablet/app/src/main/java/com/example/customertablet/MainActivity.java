@@ -129,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
             // SeekBar 조작시 목표 온도 변경
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                tx_setTemp.setText("목표 온도: " + progress);
+                tx_setTemp.setText(progress+"");
             }
 
             @Override
@@ -314,6 +314,7 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         tx_logTemp.append("희망 온도가 " + tx_setTemp.getText() + "℃에서 " + data + "℃로 변경되었습니다." + "\n");
                         tx_setTemp.setText(data);
+                        seekBar.setProgress(Integer.parseInt(data));
                         Toast.makeText(MainActivity.this,
                                 "온도가 변경되었습니다.", Toast.LENGTH_LONG).show();
                     }
