@@ -16,6 +16,7 @@ public class Client {
 	Socket socket;
 	Sender sender;
 	Receiver receiver;
+	String id;
 	
 	public Client() {
 	}
@@ -23,6 +24,12 @@ public class Client {
 	public Client(String ip, int port) {
 		this.ip = ip;
 		this.port = port;
+		
+	}
+	public Client(String ip, int port, String id) {
+		this.ip = ip;
+		this.port = port;
+		this.id = id;
 		
 	}
 	
@@ -47,19 +54,18 @@ public class Client {
 	}
 	
 	
-	// 데이터 전송 함수 -> 이 함수에 날아오는 센서값을 인자로 넣고 df.setContents로 넣어서 태블릿으로 보내야 합니다.
+	// 데이터 전송 함수 -> 이 함수에 날아오는 센서값을 인자로 넣고 df.setContents로 넣어서 태블릿으로 보내야 합니다
 	public void sendData(DataFrame df) {
 //		while(true) {
-			df.setIp("192.168.35.37");
-			
+			df.setIp("192.168.0.149");
 			//Test용 Random 값 생성하여 setContents
-//			Random r = new Random();
-//			int val = r.nextInt(8)+15;
-//			String con = String.valueOf(val);
-//			df.setContents(con);
+			Random r = new Random();
+			int val = r.nextInt(8)+15;
+			String con = String.valueOf(val);
+			df.setContents(con);
 
 			System.out.println("data 전송: " + df.getIp());
-			System.out.println(df.getSender() + df.getContents());
+			
 			
 			sender.setDf(df);
 			System.out.println("[Client Sender Thread] Thread 생성");
@@ -70,6 +76,32 @@ public class Client {
 //				e.printStackTrace();
 //			}
 //        }
+//		}
+	}
+	
+	public void sendData_test() {
+		while(true) {
+			DataFrame df = new DataFrame();
+			df.setIp("192.168.0.149");
+			df.setSender("carHead");
+			//Test용 Random 값 생성하여 setContents
+			Random r = new Random();
+			int val = r.nextInt(8)+15;
+			String con = String.valueOf(val);
+			df.setContents(con);
+
+			System.out.println("data 전송: " + df.getIp());
+			System.out.println(df.getSender() + df.getContents());
+			
+			sender.setDf(df);
+			System.out.println("[Client Sender Thread] Thread 생성");
+			new Thread(sender).start();
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	class Sender implements Runnable{
@@ -132,7 +164,6 @@ public class Client {
 
 		@Override
 		public void run() {
-			System.out.println("Clientㄴ");
 			// 수신 inputStream이 비어 있지 않은 경우 실행!
 			while(oi != null) {
 				DataFrame df = null;
@@ -165,10 +196,12 @@ public class Client {
 
 
 	public static void main(String[] args) {
-		Client client = new Client("192.168.35.37",5558);
+
+		Client client = new Client("192.168.0.113",5558,"CarHead");
+
 		try {
 			client.connect();
-			//client.sendData();
+			client.sendData_test();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

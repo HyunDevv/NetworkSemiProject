@@ -2,6 +2,12 @@ package com.example.customertablet;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.app.Activity;
+import android.content.ContentValues;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -25,15 +31,26 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+
+
+import com.df.DataFrame;
+import org.json.JSONArray;
 
 
 import com.df.DataFrame;
@@ -54,7 +71,13 @@ public class MainActivity extends AppCompatActivity {
     ServerSocket serverSocket;
     int serverPort = 5558;
     Sender sender;
-    ObjectOutputStream oo;
+    HashMap<String,ObjectOutputStream> maps = new HashMap<>();
+
+    // HTTP
+    DataFrame dataF;
+    static String strJson = "";
+
+
 
     NotificationManager manager; // FCM을 위한 NotificationManager
 
@@ -70,48 +93,48 @@ public class MainActivity extends AppCompatActivity {
         tx_ctl = findViewById(R.id.tx_ctl);
         seekBar = findViewById(R.id.seekBar);
 
-        sw_power = findViewById(R.id.sw_power); // FCM을 통한 시동 조작
-        sw_power.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    new Thread() {
-                        public void run() {
-                            send("power", "0"); // send 함수로 control과 input을 보낸다
-                        }
-                    }.start();
-                    sw_power.setText("시동 ON");
-                } else {
-                    new Thread() {
-                        public void run() {
-                            send("power", "1");
-                        }
-                    }.start();
-                    sw_power.setText("시동 OFF");
-                }
-            }
-        });
-        sw_door = findViewById(R.id.sw_door); // FCM을 통한 문 조작
-        sw_door.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    new Thread() {
-                        public void run() {
-                            send("door", "0");
-                        }
-                    }.start();
-                    sw_door.setText("문 잠김");
-                } else {
-                    new Thread() {
-                        public void run() {
-                            send("door", "1");
-                        }
-                    }.start();
-                    sw_door.setText("문 열림");
-                }
-            }
-        });
+//        sw_power = findViewById(R.id.sw_power); // FCM을 통한 시동 조작
+//        sw_power.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+//            @Override
+//            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+//                if (isChecked) {
+//                    new Thread() {
+//                        public void run() {
+//                            send("power", "0"); // send 함수로 control과 input을 보낸다
+//                        }
+//                    }.start();
+//                    sw_power.setText("시동 ON");
+//                } else {
+//                    new Thread() {
+//                        public void run() {
+//                            send("power", "1");
+//                        }
+//                    }.start();
+//                    sw_power.setText("시동 OFF");
+//                }
+//            }
+//        });
+//        sw_door = findViewById(R.id.sw_door); // FCM을 통한 문 조작
+//        sw_door.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+//            @Override
+//            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+//                if (isChecked) {
+//                    new Thread() {
+//                        public void run() {
+//                            send("door", "0");
+//                        }
+//                    }.start();
+//                    sw_door.setText("문 잠김");
+//                } else {
+//                    new Thread() {
+//                        public void run() {
+//                            send("door", "1");
+//                        }
+//                    }.start();
+//                    sw_door.setText("문 열림");
+//                }
+//            }
+//        });
 
         tx_temp.setText("Temperature Control");
         tx_setTemp.setText("Setting Temperature");
@@ -139,48 +162,213 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                if (tx_setTemp.equals(tx_curTemp.getText())) {
-                    Toast.makeText(MainActivity.this,"현재 온도와 목표 온도가 같습니다.",Toast.LENGTH_SHORT).show();
-                } else { // 이따가 seekBar를 움직이다가 목표 온도의 변화 없이 제자리로 돌아오면 어떻게 되는지 실험
-                    new Thread() {
-                        public void run() {
-                            send("temp", tx_setTemp.getText().toString()); // 값이 잘 들어오는지 이따가 확인해보기
-                        }
-                    }.start();
-                }
+//                if (tx_setTemp.equals(tx_curTemp.getText())) {
+//                    Toast.makeText(MainActivity.this,"현재 온도와 목표 온도가 같습니다.",Toast.LENGTH_SHORT).show();
+//                } else { // 이따가 seekBar를 움직이다가 목표 온도의 변화 없이 제자리로 돌아오면 어떻게 되는지 실험
+//                    new Thread() {
+//                        public void run() {
+//                            send("temp", tx_setTemp.getText().toString()); // 값이 잘 들어오는지 이따가 확인해보기
+//                        }
+//                    }.start();
+//                }
             }
         });
 
         try {
+            Log.d("[Server]", "101line startserver");
             startServer();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         // FCM사용 (앱이 중단되어 있을 때 기본적으로 title,body값으로 푸시!!)
-        FirebaseMessaging.getInstance().subscribeToTopic("car"). //구독, 이걸로 원하는 기능 설정하기(파이널 때, db 활용)
-                addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                String msg = "FCM Complete...";
-                if (!task.isSuccessful()) {
-                    msg = "FCM Fail";
-                }
-                Log.d("[TAG]", msg);
-            }
-        });
-
-        // 여기서 부터는 앱 실행상태에서 상태바 설정!!
-        LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this); // 브로드캐스트를 받을 준비
-        lbm.registerReceiver(receiver, new IntentFilter("notification")); // notification이라는 이름의 정보를 받겠다
+//        FirebaseMessaging.getInstance().subscribeToTopic("car"). //구독, 이걸로 원하는 기능 설정하기(파이널 때, db 활용)
+//                addOnCompleteListener(new OnCompleteListener<Void>() {
+//            @Override
+//            public void onComplete(@NonNull Task<Void> task) {
+//                String msg = "FCM Complete...";
+//                if (!task.isSuccessful()) {
+//                    msg = "FCM Fail";
+//                }
+//                Log.d("[TAG]", msg);
+//            }
+//        });
+//
+//        // 여기서 부터는 앱 실행상태에서 상태바 설정!!
+//        LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this); // 브로드캐스트를 받을 준비
+//        lbm.registerReceiver(receiver, new IntentFilter("notification")); // notification이라는 이름의 정보를 받겠다
     } // end OnCreate
 
+    /*
+        HTTP 통신 Code
+     */
 
-    public void startServer() throws Exception {
+
+    public String GET(String webUrl, String ip, String sender, String contents){
+        URL url = null;
+        StringBuilder html = new StringBuilder();
+        webUrl += "?ip="+ip+"&sender="+sender+"&contents="+contents;
+        try {
+            url = new URL(webUrl);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            if(con != null){
+                con.setConnectTimeout(10000);
+                con.setUseCaches(false);
+                if(con.getResponseCode() == HttpURLConnection.HTTP_OK){
+                    BufferedReader br = new BufferedReader(
+                            new InputStreamReader(con.getInputStream()));
+                    for(;;){
+                        String line = br.readLine();
+                        if(line == null)break;
+                        html.append(line );
+                        html.append('\n');
+                    }
+                    br.close();
+                }
+                con.disconnect();
+            }
+        }
+        catch(Exception ex){;}
+
+        return html.toString();
+    }
+
+    public static String POST(String url, DataFrame df){
+        InputStream is = null;
+        String result = "";
+        try {
+            URL urlCon = new URL(url);
+            HttpURLConnection httpCon = (HttpURLConnection)urlCon.openConnection();
+
+            String json = "";
+
+            // build jsonObject
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.accumulate("ip", df.getIp());
+            jsonObject.accumulate("sender", df.getSender());
+            jsonObject.accumulate("contents", df.getContents());
+
+            // convert JSONObject to JSON to String
+            json = jsonObject.toString();
+            Log.d("[Server]", "HTTP JSON 생성 후 전송 "+json);
+
+            // Set some headers to inform server about the type of the content
+            httpCon.setRequestProperty("Accept", "application/json");
+            httpCon.setRequestProperty("Content-type", "application/json");
+            httpCon.setRequestMethod("POST");
+
+            // OutputStream으로 POST 데이터를 넘겨주겠다는 옵션.
+            httpCon.setDoOutput(true);
+            // InputStream으로 서버로 부터 응답을 받겠다는 옵션.
+            httpCon.setDoInput(true);
+
+            // JSON 전송
+            OutputStream os = httpCon.getOutputStream();
+            os.write(json.getBytes("utf-8"));
+            os.flush();
+            Log.d("[Server]", "HTTP JSON 전송");
+
+
+            // receive response as inputStream
+            try {
+                is = httpCon.getInputStream();
+                // convert inputstream to string
+                if(is != null) {
+                    result = convertInputStreamToString(is);
+                    Log.d("[Server]", "HTTP 통신 수신: " + result);
+                }
+                else
+                    result = "Did not work!";
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+            finally {
+                httpCon.disconnect();
+            }
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        catch (Exception e) {
+            Log.d("[Server]", e.getLocalizedMessage());
+        }
+
+        return result;
+    }
+
+    public boolean isConnected(){
+        ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Activity.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        if (networkInfo != null && networkInfo.isConnected())
+            return true;
+        else
+            return false;
+    }
+
+    private class HttpAsyncTask extends AsyncTask<String, Void, String> {
+
+        private MainActivity mainAct;
+
+        HttpAsyncTask(MainActivity mainActivity) {
+            this.mainAct = mainActivity;
+        }
+        @Override
+        protected String doInBackground(String... urls) {
+
+            dataF = new DataFrame();
+            dataF.setIp(urls[1]);
+            dataF.setSender(urls[2]);
+            dataF.setContents(urls[3]);
+            Log.d("[Server]", "[AsyncTask Background]"+urls[0]+urls[1]+urls[2]+urls);
+
+//            return POST(urls[0], dataF);
+            return GET(urls[0], urls[1], urls[2], urls[3]);
+        }
+        // onPostExecute displays the results of the AsyncTask.
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            strJson = result;
+            mainAct.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(mainAct, "Received!", Toast.LENGTH_LONG).show();
+                    try {
+                        JSONArray json = new JSONArray(strJson);
+                        mainAct.tx_logCtl.setText(json.toString(1));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+        }
+    }
+
+
+
+    private static String convertInputStreamToString(InputStream inputStream) throws IOException{
+        BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(inputStream));
+        String line = "";
+        String result = "";
+        while((line = bufferedReader.readLine()) != null)
+            result += line;
+
+        inputStream.close();
+        return result;
+
+    }// End HTTP 통신 Code
+
+
+    /*
+        TCP/IP 통신 Code
+     */
+
+    public void startServer() throws Exception{
         serverSocket = new ServerSocket(serverPort);
 
-
-        Runnable r = new Runnable() {
+        Runnable r = new Runnable() { // Thread로 동작시켜 다른 일도 할 수 있도록!
             @Override
             public void run() {
                 while (true) {
@@ -188,7 +376,8 @@ public class MainActivity extends AppCompatActivity {
                         Socket socket = null;
                         Log.d("[Server]", "Server Ready..");
                         socket = serverSocket.accept();
-                        Log.d("[Server]", socket.getInetAddress() + "Connected...");
+                        Log.d("[Server]", socket.getInetAddress()+"Connected...");
+
                         new Receiver(socket).start();
 
 
@@ -203,6 +392,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    // TCP/IP Receive CODE
     class Receiver extends Thread {
         Socket socket;
         ObjectInputStream oi;
@@ -210,8 +400,12 @@ public class MainActivity extends AppCompatActivity {
 
         public Receiver(Socket socket) throws IOException {
             this.socket = socket;
+            ObjectOutputStream oo;
             oi = new ObjectInputStream(this.socket.getInputStream());
             oo = new ObjectOutputStream(this.socket.getOutputStream());
+
+            maps.put(socket.getInetAddress().toString(),oo);
+            Log.d("[Server]", socket.getInetAddress().toString()+"Client 정보 입력 완료");
         }
 
         @Override
@@ -229,9 +423,15 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
 
+                    // 받은 DataFrame을 웹서버로 HTTP 전송
+                    // call AsynTask to perform network operation on separate thread
+                    HttpAsyncTask httpTask = new HttpAsyncTask(MainActivity.this);
+                    httpTask.execute("http://192.168.0.38/tcpip/getFromTablet.mc", input.getIp(), input.getSender(), input.getContents());
 
                 } catch (Exception e) {
-                    Log.d("[Server]", "Receiver 객체 수신 실패");
+                    Log.d("[Server]", socket.getInetAddress()+" Exit...");
+                    maps.remove(socket.getInetAddress().toString());
+                    Log.d("[Server]", socket.getInetAddress()+" 정보 삭제 완료");
                     break;
                 }
             } // end while
@@ -252,7 +452,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }// End Receiver
 
-    public void sendDataFrame(DataFrame df, Socket socket) {
+
+    // TCP/IP Send CODE
+    public void sendDataFrame(DataFrame df, Socket socket){
+
         try {
             sender = new Sender();
             Log.d("[Server]", "setDataFrame 실행");
@@ -284,161 +487,163 @@ public class MainActivity extends AppCompatActivity {
                 //dataFrame.setSender("[TabletServer]");
                 //Log.d("[Server]", "테스트 목적 Client로 목적지 재설정");
 
-                oo.writeObject(dataFrame);
-                Log.d("[Server]", "Sender 객체 전송.. " + dataFrame.getIp() + "주소로 " + dataFrame.getContents());
+
+                maps.get("/"+dataFrame.getIp()).writeObject(dataFrame);
+                Log.d("[Server]", "Sender 객체 전송.. "+dataFrame.getIp()+"주소로 "+dataFrame.getContents());
+
                 Log.d("[Server]", "Sender 객체 전송 성공");
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
         }
-    }
-    public BroadcastReceiver receiver = new BroadcastReceiver() { // FCM 받는 부분
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (intent != null) {
-                String title = intent.getStringExtra("title");
-                String control = intent.getStringExtra("control");
-                String data = intent.getStringExtra("data");
+    } // End TCP/IP 통신 Code
 
-                if (control.equals("temp")) { // control이 temp면, data(온도값)을 set해라
-                    if (Integer.parseInt(data) > 30) {
-                        Toast.makeText(MainActivity.this,
-                                "30도 이하의 온도로 설정해주세요.", Toast.LENGTH_LONG).show();
-                    } else if (Integer.parseInt(data) < 18) {
-                        Toast.makeText(MainActivity.this,
-                                "18도 이상의 온도로 설정해 주세요.", Toast.LENGTH_LONG).show();
-                    } else if (data.equals(tx_setTemp.getText())) {
-                        Toast.makeText(MainActivity.this,
-                                "바꿀 온도를 입력해주세요.", Toast.LENGTH_LONG).show();
-                    } else {
-                        tx_logTemp.append("희망 온도가 " + tx_setTemp.getText() + "℃에서 " + data + "℃로 변경되었습니다." + "\n");
-                        tx_setTemp.setText(data);
-                        seekBar.setProgress(Integer.parseInt(data));
-                        Toast.makeText(MainActivity.this,
-                                "온도가 변경되었습니다.", Toast.LENGTH_LONG).show();
-                    }
-
-                } else if (control.equals("door")) { // 문 제어
-                    if (data.equals("0")) {
-                        tx_logCtl.append("문이 잠겼습니다." + "\n");
-                        sw_door.setChecked(true);
-                    } else if (data.equals("1")) {
-                        tx_logCtl.append("문이 열렸습니다." + "\n");
-                        sw_door.setChecked(false);
-                    }
-
-                } else if (control.equals("power")) { // 시동 제어
-                    if (data.equals("0")) {
-                        tx_logCtl.append("시동이 켜졌습니다." + "\n");
-                        sw_power.setChecked(true);
-                    } else if (data.equals("1")) {
-                        tx_logCtl.append("시동이 꺼졌습니다." + "\n");
-                        sw_power.setChecked(false);
-                    }
-                } // 추가로 제어할 것이 있으면 이곳에 else if 추가
-
-                Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE); // 진동 없애려면 삭제
-                if (Build.VERSION.SDK_INT >= 26) { //버전 체크를 해줘야 작동하도록 한다
-                    vibrator.vibrate(VibrationEffect.createOneShot(1000, 10));
-                } else {
-                    vibrator.vibrate(1000);
-                }
-
-                manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                NotificationCompat.Builder builder = null;
-                if (Build.VERSION.SDK_INT >= 26) {
-                    if (manager.getNotificationChannel("ch1") == null) {
-                        manager.createNotificationChannel(
-                                new NotificationChannel("ch1", "chname", NotificationManager.IMPORTANCE_DEFAULT));
-                    }
-                    builder = new NotificationCompat.Builder(context, "ch1");
-                } else {
-                    builder = new NotificationCompat.Builder(context);
-                }
-
-                Intent intent1 = new Intent(context, MainActivity.class);
-                PendingIntent pendingIntent = PendingIntent.getActivity(
-                        context, 101, intent1, PendingIntent.FLAG_UPDATE_CURRENT
-                );
-                intent1.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                builder.setAutoCancel(true);
-                builder.setContentIntent(pendingIntent);
-
-                builder.setContentTitle(title);
-                if (data.equals("0")) {
-                    builder.setContentText(control + " 이(가) ON/LOCK 상태로 변경되었습니다.");
-                } else if (data.equals("1")) {
-                    builder.setContentText(control + " 이(가) OFF/UNLOCK 상태로 변경되었습니다.");
-                } else {
-                    builder.setContentText(control + " 이(가)" + data + " ℃로 변경되었습니다.");
-                }
-                builder.setSmallIcon(R.drawable.a1);
-                Notification noti = builder.build();
-                manager.notify(1, noti); // 상단 알림을 없애려면 이곳 주석 처리
-            }
-        }
-    };
-
-
-    // 데이터를 Push Message에 넣어서 보내는 send 함수
-    public void send(String control, String input) { // String control, String input 으로 변경하기 !
-        System.out.println("phone Send Start...");
-        URL url = null;
-        try {
-            url = new URL("https://fcm.googleapis.com/fcm/send");
-        } catch (MalformedURLException e) {
-            System.out.println("Error while creating Firebase URL | MalformedURLException");
-            e.printStackTrace();
-        }
-        HttpURLConnection conn = null;
-        try {
-            conn = (HttpURLConnection) url.openConnection();
-        } catch (IOException e) {
-            System.out.println("Error while createing connection with Firebase URL | IOException");
-            e.printStackTrace();
-        }
-        conn.setUseCaches(false);
-        conn.setDoInput(true);
-        conn.setDoOutput(true);
-        conn.setRequestProperty("Content-Type", "application/json");
-
-        // set my firebase server key
-        conn.setRequestProperty("Authorization", "key="
-                + "AAAAK89FyMY:APA91bGxNwkQC6S_QQAKbn3COepWgndhyyjynT8ZvIEarTaGpEfMA1SPFo-ReN8b9uO21R1OfSOpNhfYbQaeohKP_sKzsgVTxu7K5tmzcjEfHzlgXRFrB1r0uqhfxLp4p836lbKw_iaN");
-
-        // create notification message into JSON format
-        JSONObject message = new JSONObject();
-        try {
-            message.put("to", "/topics/car");
-            message.put("priority", "high");
-
-            JSONObject notification = new JSONObject();
-            notification.put("title", "HyunDai");
-            notification.put("body", "자동차 상태 변경");
-            message.put("notification", notification);
-
-            JSONObject data = new JSONObject();
-            data.put("control", control); // 이 부분 변경하며 temp, door, power 등 조절
-            data.put("data", input);
-            message.put("data", data);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
-            System.out.println("FCM 전송:" + message.toString());
-            out.write(message.toString());
-            out.flush();
-            conn.getInputStream();
-            System.out.println("OK...............");
-
-        } catch (IOException e) {
-            System.out.println("Error while writing outputstream to firebase sending to ManageApp | IOException");
-            e.printStackTrace();
-        }
-
-        System.out.println("phone Send End...");
-    }
+//    public BroadcastReceiver receiver = new BroadcastReceiver() { // FCM 받는 부분
+//        @Override
+//        public void onReceive(Context context, Intent intent) {
+//            if (intent != null) {
+//                String title = intent.getStringExtra("title");
+//                String control = intent.getStringExtra("control");
+//                String data = intent.getStringExtra("data");
+//
+//                if (control.equals("temp")) { // control이 temp면, data(온도값)을 set해라
+//                    if (Integer.parseInt(data) > 30) {
+//                        Toast.makeText(MainActivity.this,
+//                                "30도 이하의 온도로 설정해주세요.", Toast.LENGTH_LONG).show();
+//                    } else if (Integer.parseInt(data) < 18) {
+//                        Toast.makeText(MainActivity.this,
+//                                "18도 이상의 온도로 설정해 주세요.", Toast.LENGTH_LONG).show();
+//                    } else if (data.equals(tx_setTemp.getText())) {
+//                        Toast.makeText(MainActivity.this,
+//                                "바꿀 온도를 입력해주세요.", Toast.LENGTH_LONG).show();
+//                    } else {
+//                        tx_logTemp.append("희망 온도가 " + tx_setTemp.getText() + "℃에서 " + data + "℃로 변경되었습니다." + "\n");
+//                        tx_setTemp.setText(data);
+//                        Toast.makeText(MainActivity.this,
+//                                "온도가 변경되었습니다.", Toast.LENGTH_LONG).show();
+//                    }
+//
+//                } else if (control.equals("door")) { // 문 제어
+//                    if (data.equals("0")) {
+//                        tx_logCtl.append("문이 잠겼습니다." + "\n");
+//                        sw_door.setChecked(true);
+//                    } else if (data.equals("1")) {
+//                        tx_logCtl.append("문이 열렸습니다." + "\n");
+//                        sw_door.setChecked(false);
+//                    }
+//
+//                } else if (control.equals("power")) { // 시동 제어
+//                    if (data.equals("0")) {
+//                        tx_logCtl.append("시동이 켜졌습니다." + "\n");
+//                        sw_power.setChecked(true);
+//                    } else if (data.equals("1")) {
+//                        tx_logCtl.append("시동이 꺼졌습니다." + "\n");
+//                        sw_power.setChecked(false);
+//                    }
+//                } // 추가로 제어할 것이 있으면 이곳에 else if 추가
+//
+//                Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE); // 진동 없애려면 삭제
+//                if (Build.VERSION.SDK_INT >= 26) { //버전 체크를 해줘야 작동하도록 한다
+//                    vibrator.vibrate(VibrationEffect.createOneShot(1000, 10));
+//                } else {
+//                    vibrator.vibrate(1000);
+//                }
+//
+//                manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+//                NotificationCompat.Builder builder = null;
+//                if (Build.VERSION.SDK_INT >= 26) {
+//                    if (manager.getNotificationChannel("ch1") == null) {
+//                        manager.createNotificationChannel(
+//                                new NotificationChannel("ch1", "chname", NotificationManager.IMPORTANCE_DEFAULT));
+//                    }
+//                    builder = new NotificationCompat.Builder(context, "ch1");
+//                } else {
+//                    builder = new NotificationCompat.Builder(context);
+//                }
+//
+//                Intent intent1 = new Intent(context, MainActivity.class);
+//                PendingIntent pendingIntent = PendingIntent.getActivity(
+//                        context, 101, intent1, PendingIntent.FLAG_UPDATE_CURRENT
+//                );
+//                intent1.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//                builder.setAutoCancel(true);
+//                builder.setContentIntent(pendingIntent);
+//
+//                builder.setContentTitle(title);
+//                if (data.equals("0")) {
+//                    builder.setContentText(control + " 이(가) ON/LOCK 상태로 변경되었습니다.");
+//                } else if (data.equals("1")) {
+//                    builder.setContentText(control + " 이(가) OFF/UNLOCK 상태로 변경되었습니다.");
+//                } else {
+//                    builder.setContentText(control + " 이(가)" + data + " ℃로 변경되었습니다.");
+//                }
+//                builder.setSmallIcon(R.drawable.a1);
+//                Notification noti = builder.build();
+//                manager.notify(1, noti); // 상단 알림을 없애려면 이곳 주석 처리
+//            }
+//        }
+//    };
+//
+//
+//    // 데이터를 Push Message에 넣어서 보내는 send 함수
+//    public void send(String control, String input) { // String control, String input 으로 변경하기 !
+//        System.out.println("phone Send Start...");
+//        URL url = null;
+//        try {
+//            url = new URL("https://fcm.googleapis.com/fcm/send");
+//        } catch (MalformedURLException e) {
+//            System.out.println("Error while creating Firebase URL | MalformedURLException");
+//            e.printStackTrace();
+//        }
+//        HttpURLConnection conn = null;
+//        try {
+//            conn = (HttpURLConnection) url.openConnection();
+//        } catch (IOException e) {
+//            System.out.println("Error while createing connection with Firebase URL | IOException");
+//            e.printStackTrace();
+//        }
+//        conn.setUseCaches(false);
+//        conn.setDoInput(true);
+//        conn.setDoOutput(true);
+//        conn.setRequestProperty("Content-Type", "application/json");
+//
+//        // set my firebase server key
+//        conn.setRequestProperty("Authorization", "key="
+//                + "AAAAK89FyMY:APA91bGxNwkQC6S_QQAKbn3COepWgndhyyjynT8ZvIEarTaGpEfMA1SPFo-ReN8b9uO21R1OfSOpNhfYbQaeohKP_sKzsgVTxu7K5tmzcjEfHzlgXRFrB1r0uqhfxLp4p836lbKw_iaN");
+//
+//        // create notification message into JSON format
+//        JSONObject message = new JSONObject();
+//        try {
+//            message.put("to", "/topics/car");
+//            message.put("priority", "high");
+//
+//            JSONObject notification = new JSONObject();
+//            notification.put("title", "HyunDai");
+//            notification.put("body", "자동차 상태 변경");
+//            message.put("notification", notification);
+//
+//            JSONObject data = new JSONObject();
+//            data.put("control", control); // 이 부분 변경하며 temp, door, power 등 조절
+//            data.put("data", input);
+//            message.put("data", data);
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
+//
+//        try {
+//            OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
+//            System.out.println("FCM 전송:" + message.toString());
+//            out.write(message.toString());
+//            out.flush();
+//            conn.getInputStream();
+//            System.out.println("OK...............");
+//
+//        } catch (IOException e) {
+//            System.out.println("Error while writing outputstream to firebase sending to ManageApp | IOException");
+//            e.printStackTrace();
+//        }
+//
+//        System.out.println("phone Send End...");
+//    }
 }

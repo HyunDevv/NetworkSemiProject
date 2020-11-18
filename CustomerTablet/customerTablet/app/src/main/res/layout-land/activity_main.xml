@@ -88,7 +88,7 @@
         android:id="@+id/tx_logTemp2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="68dp"
+        android:layout_marginStart="268dp"
         android:layout_marginTop="12dp"
         android:text="TextView"
         app:layout_constraintStart_toStartOf="@+id/divider2"

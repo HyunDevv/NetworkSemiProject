@@ -25,13 +25,15 @@ public class MainController {
 	Client client;
 	
 	public MainController() {
-		client = new Client("15.165.195.250",5555,"[WEBServer]");
+
+		client = new Client("192.168.0.37",5558,"[WEBServer]");
 		try {
 			client.connect();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
+
 	
 	@RequestMapping("/main.mc")
 	public ModelAndView main() {
@@ -120,8 +122,8 @@ public class MainController {
 	      String ip = request.getParameter("ip");
 	      String sensor = request.getParameter("sensor");
 	      String sender = request.getParameter("sender");
-	      String msg = ip+" "+sensor;
-	      System.out.println(msg+" car.mc test!!!!!");
+	      String msg = ip+" "+sensor+" "+sender;
+	      System.out.println(msg+" :car.mc test!!!!!");
 	
 	      DataFrame df = new DataFrame(ip,sender,sensor);
 		  client.sendData(df);
@@ -247,6 +249,18 @@ public class MainController {
 		
 		mv.setViewName("main");
 		return mv;
+	}
+	
+	@RequestMapping("/getFromTablet.mc")
+	public void androidWithRequest(HttpServletRequest request) {
+		System.out.println("출력");
+		String ip = request.getParameter("ip");
+		String sender = request.getParameter("sender");
+		String contents = request.getParameter("contents");
+		System.out.println(ip+ " "+sender+" "+contents);
+		
+		DataFrame df = new DataFrame(ip,sender,contents);
+		client.sendData(df);
 	}
 	
 }

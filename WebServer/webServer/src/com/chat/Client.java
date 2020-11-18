@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Random;
 
 import com.df.DataFrame;
@@ -81,8 +82,8 @@ public class Client {
 	
 	
 	// 데이터 전송 함수 -> 이 함수에 날아오는 센서값을 인자로 넣고 df.setContents로 넣어서 태블릿으로 보내야 합니다.
+
 	public void sendData(DataFrame df) {
-		
 			sender.setDf(df);
 			System.out.println("[Client Sender Thread] Thread 생성");
 			new Thread(sender).start();
@@ -182,10 +183,12 @@ public class Client {
 
 
 	public static void main(String[] args) {
-		Client client = new Client("15.165.195.250",5555);
+
+		Client client = new Client("192.168.35.37",5558);
+
 		try {
 			client.connect();
-			//client.sendData();
+//			client.sendData();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
