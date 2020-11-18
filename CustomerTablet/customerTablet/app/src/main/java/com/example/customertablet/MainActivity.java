@@ -309,7 +309,7 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(mainAct, "Received!", Toast.LENGTH_LONG).show();
                     try {
                         JSONArray json = new JSONArray(strJson);
-                        mainAct.tx_logCtl.setText(json.toString(1));
+                        mainAct.tx_logCtl2.setText(json.toString(1));
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -390,8 +390,8 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            String logTemp = tx_logTemp.getText().toString();
-                            tx_logTemp.setText(input.getContents() + "\n" + logTemp);
+                            String logTemp = tx_logTemp2.getText().toString();
+                            tx_logTemp2.setText(input.getContents() + "\n" + logTemp);
                         }
                     });
 
@@ -505,7 +505,11 @@ public class MainActivity extends AppCompatActivity {
                         tx_logCtl2.append("시동이 꺼졌습니다." + "\n");
                     }
                 }
-
+                DataFrame df = new DataFrame(); // 받은 데이터를 TCP/IP로 전송하는 부분
+                df.setSender(control);
+                df.setContents(data);
+                sender.setDataFrame(df);
+                sender.start();
                 manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                 NotificationCompat.Builder builder = null;
                 if (Build.VERSION.SDK_INT >= 26) {
