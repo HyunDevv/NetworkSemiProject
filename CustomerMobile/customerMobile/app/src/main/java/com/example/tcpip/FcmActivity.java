@@ -14,6 +14,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
@@ -27,6 +28,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.df.DataFrame;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -69,14 +71,14 @@ public class FcmActivity extends AppCompatActivity {
                 if (isChecked) {
                     new Thread() {
                         public void run() {
-                            send("power", "0"); // send 함수로 input을 보낸다
+                            send("power", "s"); // send 함수로 input을 보낸다
                         }
                     }.start();
                     sw_power.setText("시동 ON");
                 } else {
                     new Thread() {
                         public void run() {
-                            send("power", "1"); // send 함수로 input을 보낸다
+                            send("power", "t"); // send 함수로 input을 보낸다
                         }
                     }.start();
                     sw_power.setText("시동 OFF");
@@ -125,11 +127,11 @@ public class FcmActivity extends AppCompatActivity {
             }
         });
 
-        port = 5555;
+        port = 5558;
         address = "192.168.0.60"; // 192.168.0.60 server로 간다
-        id = "MobileCustomer"; // 내 아이디
+        id = "MobileKH"; // 내 아이디
 
-        //new Thread(con).start(); // 풀면 tcpip 사용
+        new Thread(con).start(); // 풀면 tcpip 사용
 
 
         // FCM사용 (앱이 중단되어 있을 때 기본적으로 title,body값으로 푸시!!)
@@ -150,13 +152,28 @@ public class FcmActivity extends AppCompatActivity {
         lbm.registerReceiver(receiver, new IntentFilter("notification")); // notification이라는 이름의 정보를 받겠다
     } // end OnCreate
 
+    class HttpAsync extends AsyncTask<String,Void,String> {
+
+        @Override
+        protected String doInBackground(String... strings) {
+            String url = strings[0];
+            String result = HttpConnect.getString(url); //result는 JSON
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            tx_log.append(s);
+        }
+
+    }
 
     @Override
     public void onBackPressed() { // 뒤로가기 눌렀을 때 q를 보내 tcp/ip 통신 종료
         super.onBackPressed();
         try {
-            Msg msg = new Msg(null, id, "q");
-            sender.setMsg(msg);
+            DataFrame df = new DataFrame(null, id, "q");
+            sender.setDf(df);
             new Thread(sender).start();
             if (socket != null) {
                 socket.close();
@@ -204,42 +221,38 @@ public class FcmActivity extends AppCompatActivity {
         //sendMsg();
     }
 
-    class Receiver extends Thread {
+    class Receiver extends Thread{
         ObjectInputStream oi;
-
         public Receiver(Socket socket) throws IOException {
             oi = new ObjectInputStream(socket.getInputStream());
         }
-
         @Override
         public void run() {
-            while (oi != null) {
-                Msg msg = null;
+            // 수신 inputStream이 비어 있지 않은 경우 실행!
+            while(oi != null) {
+                DataFrame df = null;
+                // 수신 시도
                 try {
-                    msg = (Msg) oi.readObject();
-                    // 접속되어 있는 IP주소 찍는다
-                    final Msg finalMsg = msg;
-                    Log.d("------------------", finalMsg.getMsg());
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                        }
-                    });
-                    System.out.println(msg.getId() + msg.getMsg());
+                    System.out.println("[Client Receiver Thread] 수신 대기");
+                    df = (DataFrame)oi.readObject();
+                    System.out.println("[Client Receiver Thread] 수신 완료");
+                    System.out.println(df.getSender()+": "+df.getContents());
                 } catch (Exception e) {
+                    System.out.println("[Client Receiver Thread] 수신 실패");
                     e.printStackTrace();
                     break;
                 }
 
+
             } // end while
             try {
-                if (oi != null) {
+                if(oi != null) {
                     oi.close();
                 }
-                if (socket != null) {
+                if(socket != null) {
                     socket.close();
                 }
-            } catch (Exception e) {
+            }catch(Exception e){
 
             }
             // 서버가 끊기면 connect를 한다!
@@ -256,45 +269,51 @@ public class FcmActivity extends AppCompatActivity {
 
     }
 
-    class Sender implements Runnable {
+
+    class Sender implements Runnable{
         Socket socket;
-        ObjectOutputStream oo;
-        Msg msg;
+        ObjectOutputStream outstream;
+        DataFrame df;
 
         public Sender(Socket socket) throws IOException {
             this.socket = socket;
-            oo = new ObjectOutputStream(socket.getOutputStream());
+            outstream = new ObjectOutputStream(socket.getOutputStream());
         }
 
-        public void setMsg(Msg msg) {
-            this.msg = msg;
+        public void setDf(DataFrame df) {
+            this.df = df;
         }
 
         @Override
         public void run() {
-            if (oo != null) {
+            //전송 outputStream이 비어 있지 않은 경우 실행!
+            if(outstream != null) {
+                // 전송 시도
                 try {
-                    oo.writeObject(msg);
+                    System.out.println("[Client Sender Thread] 데이터 전송 시도: "+df.getIp()+"으로 "+df.getContents()+" 전송");
+                    outstream.writeObject(df);
+                    Log.d("[test]",df.toString());
+                    outstream.flush();
+                    System.out.println("[Client Sender Thread] 데이터 전송 시도: "+df.getIp()+"으로 "+df.getContents()+" 전송 완료");
                 } catch (IOException e) {
-                    //e.printStackTrace();
-                    try {
-                        if (socket != null) {
+                    System.out.println("[Client Sender Thread] 전송 실패");
+                    // 전송 실패시 소켓이 열려 있다면 소켓 닫아버리고 다시 서버와 연결을 시도
+                    try{
+                        if(socket != null) {
+                            System.out.println("[Client Sender Thread] 전송 실패, 소켓 닫음");
                             socket.close();
                         }
-                    } catch (Exception e1) {
+                        // 소켓을 닫을 수 없음
+                    }catch(Exception e1) {
                         e1.printStackTrace();
-
                     }
-                    // 서버가 끊기면 connect를 한다!
+                    // 다시 서버와 연결 시도
                     try {
                         Thread.sleep(2000);
                         connect();
-                        //sendMsg();
-                        System.out.println("test1");
                     } catch (Exception e1) {
                         e1.printStackTrace();
                     }
-
                 }
             }
         }
@@ -319,13 +338,14 @@ public class FcmActivity extends AppCompatActivity {
                     } else if (data.equals(tx_setTemp.getText())) {
                         Toast.makeText(FcmActivity.this,
                                 "바꿀 온도를 입력해주세요.", Toast.LENGTH_LONG).show();
+
                     } else {
                         tx_log.append("희망 온도가 " + tx_setTemp.getText() + "℃에서 " + data + "℃로 변경되었습니다." + "\n");
                         tx_setTemp.setText(data);
                         Toast.makeText(FcmActivity.this,
                                 "온도가 변경되었습니다.", Toast.LENGTH_LONG).show();
                     }
-
+                // 반대 핸드폰에서 희망 온도가 바뀌지 않는 경우에도 FCM이 가는걸 막으려면 if문을 밖으로 빼준다.
                 } else if (control.equals("door")) { // 문 제어
                     if (data.equals("0")) {
                         tx_log.append("문이 잠겼습니다." + "\n");
@@ -336,10 +356,10 @@ public class FcmActivity extends AppCompatActivity {
                     }
 
                 } else if (control.equals("power")) { // 시동 제어
-                    if (data.equals("0")) {
+                    if (data.equals("s")) {
                         tx_log.append("시동이 켜졌습니다." + "\n");
                         sw_power.setChecked(true);
-                    } else if (data.equals("1")) {
+                    } else if (data.equals("t")) {
                         tx_log.append("시동이 꺼졌습니다." + "\n");
                         sw_power.setChecked(false);
                     }
@@ -374,9 +394,13 @@ public class FcmActivity extends AppCompatActivity {
 
                 builder.setContentTitle(title);
                 if (data.equals("0")) {
-                    builder.setContentText(control + " 이(가) ON/LOCK 상태로 변경되었습니다.");
+                    builder.setContentText(control + " 이(가) LOCK 상태로 변경되었습니다.");
                 } else if (data.equals("1")) {
-                    builder.setContentText(control + " 이(가) OFF/UNLOCK 상태로 변경되었습니다.");
+                    builder.setContentText(control + " 이(가) UNLOCK 상태로 변경되었습니다.");
+                } else if (data.equals("s")){
+                    builder.setContentText(control + " 이(가) ON 상태로 변경되었습니다.");
+                } else if (data.equals("t")){
+                    builder.setContentText(control + " 이(가) OFF 상태로 변경되었습니다.");
                 } else {
                     builder.setContentText(control + " 이(가)" + data + " ℃로 변경되었습니다.");
                 }

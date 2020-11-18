@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
         tx_sen = findViewById(R.id.tx_sen);
         et_ip = findViewById(R.id.et_ip);
         et_msg = findViewById(R.id.et_msg);
-        port = 5555;
+        port = 5558;
         address = "15.165.195.250";
         id="MobileJH";
 
@@ -222,8 +222,6 @@ public class MainActivity extends AppCompatActivity {
 
         sender = new Sender(socket);
         new Receiver(socket).start();
-
-        //getList();
 
         //sendMsg();
     }

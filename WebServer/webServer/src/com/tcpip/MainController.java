@@ -125,8 +125,8 @@ public class MainController {
 	      String ip = request.getParameter("ip");
 	      String sensor = request.getParameter("sensor");
 	      String sender = request.getParameter("sender");
-	      String msg = ip+" "+sensor;
-	      System.out.println(msg+" car.mc test!!!!!");
+	      String msg = ip+" "+sensor+" "+sender;
+	      System.out.println(msg+" :car.mc test!!!!!");
 	
 	      DataFrame df = new DataFrame(ip,sender,sensor);
 		  client.sendData(df);
@@ -262,6 +262,8 @@ public class MainController {
 		String contents = request.getParameter("contents");
 		System.out.println(ip+ " "+sender+" "+contents);
 		
+		DataFrame df = new DataFrame(ip,sender,contents);
+		client.sendData(df);
 	}
 	
 }
