@@ -223,8 +223,6 @@ public class MainActivity extends AppCompatActivity {
         sender = new Sender(socket);
         new Receiver(socket).start();
 
-        //getList();
-
         //sendMsg();
     }
 
