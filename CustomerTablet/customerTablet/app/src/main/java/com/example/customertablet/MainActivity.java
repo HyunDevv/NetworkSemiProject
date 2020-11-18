@@ -47,6 +47,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Set;
 
 
 import com.df.DataFrame;
@@ -386,7 +387,7 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     final DataFrame input = (DataFrame) oi.readObject();
                     Log.d("[Server]", "input: " + input.getSender() + ": " + input.getContents());
-                    sendDataFrame(input, socket);
+                    sendDataFrame(input);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -426,7 +427,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     // TCP/IP Send CODE
-    public void sendDataFrame(DataFrame df, Socket socket) {
+    public void sendDataFrame(DataFrame df) {
 
         try {
             sender = new Sender();
@@ -459,7 +460,6 @@ public class MainActivity extends AppCompatActivity {
                 //dataFrame.setSender("[TabletServer]");
                 //Log.d("[Server]", "테스트 목적 Client로 목적지 재설정");
 
-
                 maps.get("/" + dataFrame.getIp()).writeObject(dataFrame);
                 Log.d("[Server]", "Sender 객체 전송.. " + dataFrame.getIp() + "주소로 " + dataFrame.getContents());
 
@@ -471,13 +471,12 @@ public class MainActivity extends AppCompatActivity {
         }
     } // End TCP/IP 통신 Code
 
-    public BroadcastReceiver receiver = new BroadcastReceiver() { // FCM 받는 부분
-        @Override
+    public final BroadcastReceiver receiver = new BroadcastReceiver() { // FCM 받는 부분
         public void onReceive(Context context, Intent intent) {
             if (intent != null) {
                 String title = intent.getStringExtra("title");
-                String control = intent.getStringExtra("control");
-                String data = intent.getStringExtra("data");
+                final String control = intent.getStringExtra("control");
+                final String data = intent.getStringExtra("data");
 
                 Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE); // 진동 없애려면 삭제
                 if (Build.VERSION.SDK_INT >= 26) { //버전 체크를 해줘야 작동하도록 한다
@@ -488,28 +487,38 @@ public class MainActivity extends AppCompatActivity {
                 if (control.equals("temp")) { // 받은 FCM 데이터를 화면에 seekBar와 Switch로 보여줌
                     seekBar.setProgress(Integer.parseInt(data.toString()), true);
                     tx_logTemp2.append("목표 온도가 " + data + "℃로 변경되었습니다." + "\n");
-                } else if(control.equals("door")){
-                    if(data.equals("0")){
+                } else if (control.equals("door")) {
+                    if (data.equals("0")) {
                         sw_door.setChecked(true);
                         tx_logCtl2.append("문이 잠겼습니다." + "\n");
-                    } else if(data.equals("1")){
+                    } else if (data.equals("1")) {
                         sw_door.setChecked(false);
                         tx_logCtl2.append("문이 열렸습니다." + "\n");
                     }
-                } else if(control.equals("power")){
-                    if(data.equals("0")){
+                } else if (control.equals("power")) {
+                    if (data.equals("s")) {
                         sw_power.setChecked(true);
                         tx_logCtl2.append("시동이 켜졌습니다." + "\n");
-                    } else if(data.equals("1")){
+                    } else if (data.equals("t")) {
                         sw_power.setChecked(false);
                         tx_logCtl2.append("시동이 꺼졌습니다." + "\n");
                     }
                 }
+                // sendData
+                final Set<String> set = maps.keySet();
                 DataFrame df = new DataFrame(); // 받은 데이터를 TCP/IP로 전송하는 부분
+                //                            Socket socket = serverSocket.accept();
+                String ipp = "";
+                for (String key : set) {
+                    ipp = key.substring(1);
+                    Log.d("[Server]", ipp);
+                }
+
+                df.setIp(ipp);
                 df.setSender(control);
                 df.setContents(data);
-                sender.setDataFrame(df);
-                sender.start();
+                sendDataFrame(df);
+
                 manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                 NotificationCompat.Builder builder = null;
                 if (Build.VERSION.SDK_INT >= 26) {
@@ -535,6 +544,10 @@ public class MainActivity extends AppCompatActivity {
                     builder.setContentText(control + " 이(가) ON/LOCK 상태로 변경되었습니다.");
                 } else if (data.equals("1")) {
                     builder.setContentText(control + " 이(가) OFF/UNLOCK 상태로 변경되었습니다.");
+                } else if (data.equals("s")){
+                    builder.setContentText(control + " 이(가) ON 상태로 변경되었습니다.");
+                } else if (data.equals("t")){
+                    builder.setContentText(control + " 이(가) OFF 상태로 변경되었습니다.");
                 } else {
                     builder.setContentText(control + " 이(가)" + data + " ℃로 변경되었습니다.");
                 }

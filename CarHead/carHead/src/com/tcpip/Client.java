@@ -54,11 +54,11 @@ public class Client {
 	}
 	
 	
-	// 데이터 전송 함수 -> 이 함수에 날아오는 센서값을 인자로 넣고 df.setContents로 넣어서 태블릿으로 보내야 합니다
+	// �뜲�씠�꽣 �쟾�넚 �븿�닔 -> �씠 �븿�닔�뿉 �궇�븘�삤�뒗 �꽱�꽌媛믪쓣 �씤�옄濡� �꽔怨� df.setContents濡� �꽔�뼱�꽌 �깭釉붾┸�쑝濡� 蹂대궡�빞 �빀�땲�떎
 	public void sendData(DataFrame df) {
 //		while(true) {
-			df.setIp("192.168.0.149");
-			//Test용 Random 값 생성하여 setContents
+			df.setIp("192.168.0.7");
+			//Test�슜 Random 媛� �깮�꽦�븯�뿬 setContents
 			Random r = new Random();
 			int val = r.nextInt(8)+15;
 			String con = String.valueOf(val);
@@ -82,7 +82,7 @@ public class Client {
 	public void sendData_test() {
 		while(true) {
 			DataFrame df = new DataFrame();
-			df.setIp("192.168.0.149");
+			df.setIp("192.168.0.7");
 			df.setSender("carHead");
 			//Test용 Random 값 생성하여 setContents
 			Random r = new Random();
@@ -94,7 +94,7 @@ public class Client {
 			System.out.println(df.getSender() + df.getContents());
 			
 			sender.setDf(df);
-			System.out.println("[Client Sender Thread] Thread 생성");
+			System.out.println("[Client Sender Thread] Thread 전송");
 			new Thread(sender).start();
 			try {
 				Thread.sleep(10000);
@@ -125,10 +125,10 @@ public class Client {
 			if(outstream != null) {
 				// 전송 시도 
 				try {
-					System.out.println("[Client Sender Thread] 데이터 전송 시도: "+df.getIp()+"으로 "+df.getContents()+" 전송");
+					System.out.println("[Client Sender Thread] 데이터 전송 시도: "+df.getIp()+"으로  "+df.getContents()+"전송");
 					outstream.writeObject(df);
 					outstream.flush();
-					System.out.println("[Client Sender Thread] 데이터 전송 시도: "+df.getIp()+"으로 "+df.getContents()+" 전송 완료");
+					System.out.println("[Client Sender Thread] 데이터 전송 시도: "+df.getIp()+"으로 "+df.getContents()+"전송 완료");
 				} catch (IOException e) {
 					System.out.println("[Client Sender Thread] 전송 실패");
 					// 전송 실패시 소켓이 열려 있다면 소켓 닫아버리고 다시 서버와 연결을 시도  
@@ -197,11 +197,11 @@ public class Client {
 
 	public static void main(String[] args) {
 
-		Client client = new Client("192.168.0.113",5558,"CarHead");
+		Client client = new Client("192.168.0.7",5558,"CarHead");
 
 		try {
 			client.connect();
-			client.sendData_test();
+//			client.sendData_test();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

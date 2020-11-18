@@ -71,14 +71,14 @@ public class FcmActivity extends AppCompatActivity {
                 if (isChecked) {
                     new Thread() {
                         public void run() {
-                            send("power", "0"); // send 함수로 input을 보낸다
+                            send("power", "s"); // send 함수로 input을 보낸다
                         }
                     }.start();
                     sw_power.setText("시동 ON");
                 } else {
                     new Thread() {
                         public void run() {
-                            send("power", "1"); // send 함수로 input을 보낸다
+                            send("power", "t"); // send 함수로 input을 보낸다
                         }
                     }.start();
                     sw_power.setText("시동 OFF");
@@ -338,13 +338,14 @@ public class FcmActivity extends AppCompatActivity {
                     } else if (data.equals(tx_setTemp.getText())) {
                         Toast.makeText(FcmActivity.this,
                                 "바꿀 온도를 입력해주세요.", Toast.LENGTH_LONG).show();
+
                     } else {
                         tx_log.append("희망 온도가 " + tx_setTemp.getText() + "℃에서 " + data + "℃로 변경되었습니다." + "\n");
                         tx_setTemp.setText(data);
                         Toast.makeText(FcmActivity.this,
                                 "온도가 변경되었습니다.", Toast.LENGTH_LONG).show();
                     }
-
+                // 반대 핸드폰에서 희망 온도가 바뀌지 않는 경우에도 FCM이 가는걸 막으려면 if문을 밖으로 빼준다.
                 } else if (control.equals("door")) { // 문 제어
                     if (data.equals("0")) {
                         tx_log.append("문이 잠겼습니다." + "\n");
@@ -355,10 +356,10 @@ public class FcmActivity extends AppCompatActivity {
                     }
 
                 } else if (control.equals("power")) { // 시동 제어
-                    if (data.equals("0")) {
+                    if (data.equals("s")) {
                         tx_log.append("시동이 켜졌습니다." + "\n");
                         sw_power.setChecked(true);
-                    } else if (data.equals("1")) {
+                    } else if (data.equals("t")) {
                         tx_log.append("시동이 꺼졌습니다." + "\n");
                         sw_power.setChecked(false);
                     }
@@ -393,9 +394,13 @@ public class FcmActivity extends AppCompatActivity {
 
                 builder.setContentTitle(title);
                 if (data.equals("0")) {
-                    builder.setContentText(control + " 이(가) ON/LOCK 상태로 변경되었습니다.");
+                    builder.setContentText(control + " 이(가) LOCK 상태로 변경되었습니다.");
                 } else if (data.equals("1")) {
-                    builder.setContentText(control + " 이(가) OFF/UNLOCK 상태로 변경되었습니다.");
+                    builder.setContentText(control + " 이(가) UNLOCK 상태로 변경되었습니다.");
+                } else if (data.equals("s")){
+                    builder.setContentText(control + " 이(가) ON 상태로 변경되었습니다.");
+                } else if (data.equals("t")){
+                    builder.setContentText(control + " 이(가) OFF 상태로 변경되었습니다.");
                 } else {
                     builder.setContentText(control + " 이(가)" + data + " ℃로 변경되었습니다.");
                 }

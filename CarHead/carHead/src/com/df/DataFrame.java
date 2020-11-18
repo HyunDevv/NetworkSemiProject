@@ -5,8 +5,8 @@ import java.io.Serializable;
 public class DataFrame implements Serializable{
     private static final long serialVersionUID = 1L;
     private String ip;	// 목적지 IP Address
-    private String sender;	// 발신 위치(센서 or 제어기기) cf. 제어기기 = CustomerMobile, BrowserAdmin  
-    private String contents;	// Data 내용 
+    private String sender;	// 발신 위치(센서 or 제어기기) cf. 제어기기 = CustomerMobile, BrowserAdmin    
+    private String contents;	// Data 내용  
 
     public String getIp() {
         return ip;
