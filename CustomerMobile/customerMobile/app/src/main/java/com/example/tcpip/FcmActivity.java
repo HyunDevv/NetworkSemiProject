@@ -125,7 +125,7 @@ public class FcmActivity extends AppCompatActivity {
             }
         });
 
-        port = 5555;
+        port = 5558;
         address = "192.168.0.60"; // 192.168.0.60 server로 간다
         id = "MobileCustomer"; // 내 아이디
 
