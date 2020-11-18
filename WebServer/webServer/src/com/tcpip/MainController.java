@@ -26,7 +26,7 @@ public class MainController {
 	
 	public MainController() {
 
-		client = new Client("192.168.0.37",5558,"[WEBServer]");
+		client = new Client("15.165.195.250",5558,"[WEBServer]");
 		try {
 			client.connect();
 		} catch (IOException e) {
