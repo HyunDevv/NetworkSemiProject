@@ -430,6 +430,7 @@ public class MainActivity extends AppCompatActivity {
                         public void run() {
                             String logTemp = tx_logTemp2.getText().toString();
                             tx_logTemp2.setText(input.getSender()+" "+input.getContents() + "\n" + logTemp);
+                            tx_curTemp.setText(input.getContents());
                         }
                     });
 
