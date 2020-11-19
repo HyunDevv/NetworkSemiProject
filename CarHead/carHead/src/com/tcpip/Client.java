@@ -54,11 +54,11 @@ public class Client {
 	}
 	
 	
-	// �뜲�씠�꽣 �쟾�넚 �븿�닔 -> �씠 �븿�닔�뿉 �궇�븘�삤�뒗 �꽱�꽌媛믪쓣 �씤�옄濡� �꽔怨� df.setContents濡� �꽔�뼱�꽌 �깭釉붾┸�쑝濡� 蹂대궡�빞 �빀�땲�떎
+	// 데이터 전송 함수 -> 이 함수에 날아오는 센서값을 인자로 넣고 df.setContents로 넣어서 태블릿으로 보내야 합니다
 	public void sendData(DataFrame df) {
 //		while(true) {
-			df.setIp("192.168.0.7");
-			//Test�슜 Random 媛� �깮�꽦�븯�뿬 setContents
+			df.setIp("172.30.1.5");
+			//Test용 Random 값 생성하여 setContents
 			Random r = new Random();
 			int val = r.nextInt(8)+15;
 			String con = String.valueOf(val);
@@ -82,7 +82,7 @@ public class Client {
 	public void sendData_test() {
 		while(true) {
 			DataFrame df = new DataFrame();
-			df.setIp("192.168.0.7");
+			df.setIp("172.30.1.5");
 			df.setSender("carHead");
 			//Test용 Random 값 생성하여 setContents
 			Random r = new Random();
@@ -197,7 +197,7 @@ public class Client {
 
 	public static void main(String[] args) {
 
-		Client client = new Client("192.168.0.7",5558,"CarHead");
+		Client client = new Client("192.168.0.66",5558,"CarHead");
 
 		try {
 			client.connect();

@@ -235,7 +235,7 @@ public class FcmActivity extends AppCompatActivity {
                 try {
                     System.out.println("[Client Receiver Thread] 수신 대기");
                     df = (DataFrame)oi.readObject();
-                    System.out.println("[Client Receiver Thread] 수신 완료");
+                    System.out.println("[Client Receiver Thread] 수신 완료"); // 11/19에 이 부분에 setText 추가하기
                     System.out.println(df.getSender()+": "+df.getContents());
                 } catch (Exception e) {
                     System.out.println("[Client Receiver Thread] 수신 실패");
