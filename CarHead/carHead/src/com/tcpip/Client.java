@@ -210,7 +210,7 @@ public class Client {
 
 	public static void main(String[] args) {
 
-		Client client = new Client("192.168.0.7",5558,"CarHead");
+		Client client = new Client("192.168.0.66",5558,"CarHead");
 
 		try {
 			client.connect();
