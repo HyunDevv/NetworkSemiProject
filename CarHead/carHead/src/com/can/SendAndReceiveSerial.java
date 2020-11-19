@@ -49,7 +49,7 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		if (portIdentifier.isCurrentlyOwned()) {
 			System.out.println("Error: Port is currently in use");
 		} else {
-			// CarHead - CarRear: 罹� �넻�떊 �룷�듃 5001
+			// CarHead - CarRear: 캔 통신 포트 5001
 			commPort = portIdentifier.open(this.getClass().getName(), 5001);
 			if (commPort instanceof SerialPort) {
 				serialPort = (SerialPort) commPort;
@@ -114,13 +114,13 @@ public class SendAndReceiveSerial implements SerialPortEventListener {
 		String data;
 
 		public SerialWriter() {
-			// can protocol�뿉 李몄뿬, 怨좎젙媛�
+			// can protocol에 참여, 고정값
 			// :canmsg\r
 			this.data = ":G11A9\r";
 		}
 
 		public SerialWriter(String serialData) {
-			// CheckSum Data �깮�꽦
+			// CheckSum Data 생성
 			this.data = sendDataFormat(serialData);
 		}
 
