@@ -89,18 +89,22 @@
         android:id="@+id/tx_logTemp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="68dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="20dp"
         android:text="TextView"
+        app:layout_constraintEnd_toStartOf="@+id/tx_logCtl2"
+        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="@+id/divider2"
         app:layout_constraintTop_toBottomOf="@+id/divider2" />
 
     <TextView
         android:id="@+id/tx_logTemp2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="4dp"
-        android:layout_marginTop="32dp"
+        android:layout_width="178dp"
+        android:layout_height="83dp"
+        android:layout_marginTop="48dp"
+        android:inputType="textMultiLine|textImeMultiLine"
+        android:text="Current"
+        app:layout_constraintEnd_toStartOf="@+id/divider"
+        app:layout_constraintHorizontal_bias="0.551"
         app:layout_constraintStart_toStartOf="@+id/divider2"
         app:layout_constraintTop_toBottomOf="@+id/divider2" />
 

@@ -388,19 +388,20 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     final DataFrame input = (DataFrame) oi.readObject();
                     Log.d("[Server]", "input: " + input.getSender() + ": " + input.getContents());
-                    sendDataFrame(input);
+                    //TCPIP로 받은 값을 다시 TCPIP로 전송할 일은 없으므로 사용 X
+//                    sendDataFrame(input);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             String logTemp = tx_logTemp2.getText().toString();
-                            tx_logTemp2.setText(input.getContents() + "\n" + logTemp);
+                            tx_logTemp2.setText(input.getSender()+" "+input.getContents() + "\n" + logTemp);
                         }
                     });
 
                     // 받은 DataFrame을 웹서버로 HTTP 전송
                     // call AsynTask to perform network operation on separate thread
                     HttpAsyncTask httpTask = new HttpAsyncTask(MainActivity.this);
-                    httpTask.execute("http://192.168.0.37/webServer/getFromTablet.mc", input.getIp(), input.getSender(), input.getContents());
+                    httpTask.execute("http://15.165.195.250:8080/webServer/getFromTablet.mc", input.getIp(), input.getSender(), input.getContents());
 
                 } catch (Exception e) {
                     Log.d("[Server]", socket.getInetAddress() + " Exit...");
