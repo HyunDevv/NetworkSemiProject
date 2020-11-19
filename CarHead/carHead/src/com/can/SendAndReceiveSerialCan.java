@@ -4,7 +4,10 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Random;
+import java.util.Scanner;
+
+import com.df.DataFrame;
+import com.tcpip.Client;
 
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
@@ -21,14 +24,13 @@ public class SendAndReceiveSerialCan implements SerialPortEventListener {
 	private CommPort commPort;
 	private String result;
 	private String rawCanID, rawTotal;
-	SendAndReceiveSerial arduino;
 	// private boolean start = false;
-
-	public void setArduino(SendAndReceiveSerial arduino) {
-		this.arduino = arduino;
-	}
+	private Client client;
 	
-	// Serial-Can 통신
+	public void setClient(Client client) {
+		this.client = client;
+	}
+
 	public SendAndReceiveSerialCan(String portName, boolean mode) {
 		try {
 			if (mode == true) {
@@ -47,7 +49,7 @@ public class SendAndReceiveSerialCan implements SerialPortEventListener {
 		if (portIdentifier.isCurrentlyOwned()) {
 			System.out.println("Error: Port is currently in use");
 		} else {
-			// CarHead - CarFront - CarRear: 캔 통신 포트 5001
+			// CarHead - CarRear: 캔 통신 포트 5001
 			commPort = portIdentifier.open(this.getClass().getName(), 5001);
 			if (commPort instanceof SerialPort) {
 				serialPort = (SerialPort) commPort;
@@ -79,18 +81,35 @@ public class SendAndReceiveSerialCan implements SerialPortEventListener {
 		Thread sendTread = new Thread(new SerialWriter(rawTotal));
 		sendTread.start();
 	}
-	
-	public void checkCan(String data) {
-		String receiveTotal = data.substring(1, 28);
-		String receiveID = data.substring(4, 12);
-		String receiveData = data.substring(12, 28);
+
+	// can으로 받은 데이터를 가공하여 Client.sendData로 전달
+	public void checkcode(String can) {
+		String code = can.substring(0, 1); // 명령 코드
+		String type = can.substring(1, 3); // 데이터 특성 코드
+		String id = can.substring(3, 11); // CAN ID
+		String sensor = can.substring(11, 15); // 데이터: 센서 정보
+		String data = can.substring(15); // 데이터: 센서 값
 		
-		// can 데이터를 확인, arduino로 데이터를 보내 led 제어
-		if(receiveData.equals("0010000000000001")) {
-			arduino.sendIoT("s");
-		}else if(receiveData.equals("0010000000000000")) {
-			arduino.sendIoT("t");
+		DataFrame df = new DataFrame();
+		if(id.equals("10003B01")) {
+			df.setSender("CarRear");
+		}else if(id.equals("10003B02")) {
+			df.setSender("CarFront");
+		}else {
+			df.setSender("CarHead");
 		}
+		
+		if (code.equals("U")) {
+			if (sensor.equals("0001")) {
+				double temp = Double.parseDouble(data) / 100;
+				String con = "현재 온도: " + temp;
+				df.setContents(con);
+			}
+			
+			client.sendData(df);
+		}
+		
+
 	}
 
 	private class SerialWriter implements Runnable {
@@ -103,7 +122,7 @@ public class SendAndReceiveSerialCan implements SerialPortEventListener {
 		}
 
 		public SerialWriter(String serialData) {
-			// CheckSum Data create
+			// CheckSum Data 생성
 			this.data = sendDataFormat(serialData);
 		}
 
@@ -160,8 +179,10 @@ public class SendAndReceiveSerialCan implements SerialPortEventListener {
 
 				String ss = new String(readBuffer);
 				System.out.println("Receive Low Data:" + ss + "||");
-				
-				checkCan(ss);
+
+				result = ss.substring(1, 28);
+				checkcode(result);
+
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -186,43 +207,21 @@ public class SendAndReceiveSerialCan implements SerialPortEventListener {
 		}
 
 	}
-	
-
-	public void sendIoT(String cmd) {
-	
-		Thread t1 = new Thread (new SendIoT(cmd));
-		t1.start();
-	}
-	class SendIoT implements Runnable{
-
-		String cmd;
-		public SendIoT(String cmd) {
-			this.cmd = cmd;
-		}
-
-		@Override
-		public void run() {
-		     byte[]datas=cmd.getBytes();
-		     try {
-				out.write(datas);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-		}
-		
-	}
-
 
 	public static void main(String args[]) throws IOException {
-		SendAndReceiveSerial arduino = new SendAndReceiveSerial("COM5", true);
-		SendAndReceiveSerialCan ss = new SendAndReceiveSerialCan("COM9", true);
+		SendAndReceiveSerialCan ss = new SendAndReceiveSerialCan("COM6", true);
+		Scanner scan = new Scanner(System.in);
+		while (true) {	
+			String str = scan.nextLine();
+			if (str.equals("s")) {
+				ss.sendSerial("W2810003B010000000000005011", "10003B01");
+			}else if (str.equals("t")) {
+				ss.sendSerial("W2810003B010000000000005010", "10003B01");
+			} else if (str.equals("q")) {
+				break;
+			}
+		}
+
+		// ss.close();
 	}
-
 }
-
-
-
-
-

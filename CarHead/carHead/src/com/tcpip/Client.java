@@ -6,6 +6,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Random;
 
+import com.can.SendAndReceiveSerialCan;
 import com.df.DataFrame;
 
 
@@ -17,6 +18,11 @@ public class Client {
 	Sender sender;
 	Receiver receiver;
 	String id;
+	private SendAndReceiveSerialCan can;
+	
+	public void setCan(SendAndReceiveSerialCan can) {
+		this.can = can;
+	}
 	
 	public Client() {
 	}
@@ -56,33 +62,19 @@ public class Client {
 	
 	// 데이터 전송 함수 -> 이 함수에 날아오는 센서값을 인자로 넣고 df.setContents로 넣어서 태블릿으로 보내야 합니다
 	public void sendData(DataFrame df) {
-//		while(true) {
-			df.setIp("172.30.1.5");
-			//Test용 Random 값 생성하여 setContents
-			Random r = new Random();
-			int val = r.nextInt(8)+15;
-			String con = String.valueOf(val);
-			df.setContents(con);
+			df.setIp("211.104.145.12");
 
 			System.out.println("data 전송: " + df.getIp());
-			
 			
 			sender.setDf(df);
 			System.out.println("[Client Sender Thread] Thread 생성");
 			new Thread(sender).start();
-//			try {
-//				Thread.sleep(10000);
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
-//        }
-//		}
 	}
 	
 	public void sendData_test() {
 		while(true) {
 			DataFrame df = new DataFrame();
-			df.setIp("172.30.1.5");
+			df.setIp("192.168.0.7");
 			df.setSender("carHead");
 			//Test용 Random 값 생성하여 setContents
 			Random r = new Random();
@@ -102,6 +94,25 @@ public class Client {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public void sendCan(DataFrame df) {
+		String sensor = "";
+		String content = "";
+		if(df.getSender().equals("temp")) {
+			sensor = "0001";
+			content = "00000000" + df.getContents() + "00";
+		}
+		if(df.getSender().equals("power")) {
+			if(df.getContents().equals("s")) {
+			sensor = "0010";
+			content = "000000000001";
+			}else if(df.getContents().equals("t")) {
+				sensor = "0010";
+				content = "000000000000";
+				}
+		}
+		can.sendSerial("W2810003B03" + sensor + content, "10003B03");
 	}
 	
 	class Sender implements Runnable{
@@ -174,6 +185,8 @@ public class Client {
 					System.out.println("[Client Receiver Thread] 수신 완료");
 					System.out.println(df.getSender()+": "+df.getContents());
 					
+					// 받은 데이터를 가공하여 can으로 전송
+					sendCan(df);
 				} catch (Exception e) {
 					System.out.println("[Client Receiver Thread] 수신 실패");
 					e.printStackTrace();
@@ -197,7 +210,7 @@ public class Client {
 
 	public static void main(String[] args) {
 
-		Client client = new Client("192.168.0.66",5558,"CarHead");
+		Client client = new Client("192.168.0.7",5558,"CarHead");
 
 		try {
 			client.connect();
