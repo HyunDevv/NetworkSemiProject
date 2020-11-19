@@ -90,7 +90,6 @@ public class SendAndReceiveSerialCan implements SerialPortEventListener {
 		String sensor = can.substring(11, 15); // 데이터: 센서 정보
 		String data = can.substring(15); // 데이터: 센서 값
 		
-
 		DataFrame df = new DataFrame();
 		if(id.equals("10003B01")) {
 			df.setSender("CarRear");
