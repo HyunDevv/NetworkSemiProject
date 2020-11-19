@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
         et_ip = findViewById(R.id.et_ip);
         et_msg = findViewById(R.id.et_msg);
         port = 5558;
-        address = "192.168.0.37";
+        address = "15.165.195.250";
         id="MobileJH";
 
         new Thread(con).start();
