@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
     Sender sender;
     HashMap<String, ObjectOutputStream> maps = new HashMap<>();
 
+
     // HTTP
     DataFrame dataF;
     static String strJson = "";
@@ -93,22 +94,46 @@ public class MainActivity extends AppCompatActivity {
         sw_power.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                Set<String> set = maps.keySet(); // maps.keySet()를 통해 키<>를 받아옴
+                DataFrame df = new DataFrame(); // 받은 데이터를 TCP/IP로 전송하는 부분
+                String ipp = "";
+                for (String key : set) { // key값이 1개이므로 for문으로 받아온다
+                    ipp = key.substring(1); // 앞에 들어오는 / 를 지운다
+                    Log.d("[Server]", ipp+"여기 power");
+                }
+                df.setIp(ipp);
+                df.setSender("power");
                 if (isChecked) {
                     sw_power.setText("시동 ON");
+                    df.setContents("s");
                 } else {
                     sw_power.setText("시동 OFF");
+                    df.setContents("t");
                 }
+                sendDataFrame(df);
             }
         });
         sw_door = findViewById(R.id.sw_door); // FCM을 통한 문 조작
         sw_door.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                Set<String> set = maps.keySet(); // maps.keySet()를 통해 키<>를 받아옴
+                DataFrame df = new DataFrame(); // 받은 데이터를 TCP/IP로 전송하는 부분
+                String ipp = "";
+                for (String key : set) { // key값이 1개이므로 for문으로 받아온다
+                    ipp = key.substring(1); // 앞에 들어오는 / 를 지운다
+                    Log.d("[Server]", ipp+"여기 power");
+                }
+                df.setIp(ipp);
+                df.setSender("door");
                 if (isChecked) {
                     sw_door.setText("문 잠김");
+                    df.setContents("0");
                 } else {
                     sw_door.setText("문 열림");
+                    df.setContents("1");
                 }
+                sendDataFrame(df);
             }
         });
 //
@@ -140,7 +165,18 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                seekBar.setProgress(Integer.parseInt(tx_setTemp.getText().toString()), true); // 이걸 TCP/IP로 보내기
+//                seekBar.setProgress(Integer.parseInt(tx_setTemp.getText().toString()), true); // 이걸 TCP/IP로 보내기
+                Set<String> set = maps.keySet(); // maps.keySet()를 통해 키<>를 받아옴
+                DataFrame df = new DataFrame(); // 받은 데이터를 TCP/IP로 전송하는 부분
+                String ipp = "";
+                for (String key : set) { // key값이 1개이므로 for문으로 받아온다
+                    ipp = key.substring(1); // 앞에 들어오는 / 를 지운다
+                    Log.d("[Server]", ipp);
+                }
+                df.setIp(ipp);
+                df.setSender("temp");
+                df.setContents(tx_setTemp.getText().toString());
+                sendDataFrame(df);
             }
         });
 
@@ -152,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
 //         FCM사용 (앱이 중단되어 있을 때 기본적으로 title,body값으로 푸시!!)
-        FirebaseMessaging.getInstance().subscribeToTopic("car"). //구독, 이걸로 원하는 기능 설정하기(파이널 때, db 활용)
+        FirebaseMessaging.getInstance().subscribeToTopic("car"). //구독, 이거랑 토큰으로 원하는 기능 설정하기(파이널 때, db 활용)
                 addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
@@ -381,19 +417,21 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     final DataFrame input = (DataFrame) oi.readObject();
                     Log.d("[Server]", "input: " + input.getSender() + ": " + input.getContents());
-                    sendDataFrame(input);
+                    //TCPIP로 받은 값을 다시 TCPIP로 전송할 일은 없으므로 사용 X
+//                    sendDataFrame(input);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             String logTemp = tx_logTemp2.getText().toString();
-                            tx_logTemp2.setText(input.getContents() + "\n" + logTemp);
+                            tx_logTemp2.setText(input.getSender()+" "+input.getContents() + "\n" + logTemp);
+                            tx_curTemp.setText(input.getContents());
                         }
                     });
 
                     // 받은 DataFrame을 웹서버로 HTTP 전송
                     // call AsynTask to perform network operation on separate thread
                     HttpAsyncTask httpTask = new HttpAsyncTask(MainActivity.this);
-                    httpTask.execute("http://192.168.0.38/tcpip/getFromTablet.mc", input.getIp(), input.getSender(), input.getContents());
+                    httpTask.execute("http://15.165.195.250:8080/webServer/getFromTablet.mc", input.getIp(), input.getSender(), input.getContents());
 
                 } catch (Exception e) {
                     Log.d("[Server]", socket.getInetAddress() + " Exit...");
@@ -437,6 +475,7 @@ public class MainActivity extends AppCompatActivity {
     class Sender extends Thread {
         DataFrame dataFrame;
 
+
         public Sender() {
 
         }
@@ -454,9 +493,10 @@ public class MainActivity extends AppCompatActivity {
                 //dataFrame.setSender("[TabletServer]");
                 //Log.d("[Server]", "테스트 목적 Client로 목적지 재설정");
 
-                maps.get("/" + dataFrame.getIp()).writeObject(dataFrame);
-                Log.d("[Server]", "Sender 객체 전송.. " + dataFrame.getIp() + "주소로 " + dataFrame.getContents());
-
+                if(maps.get("/"+dataFrame.getIp())!= null){
+                    maps.get("/"+dataFrame.getIp()).writeObject(dataFrame);
+                }
+                Log.d("[Server]", "Sender 객체 전송.. "+dataFrame.getIp()+"주소로 "+dataFrame.getContents());
                 Log.d("[Server]", "Sender 객체 전송 성공");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -471,6 +511,7 @@ public class MainActivity extends AppCompatActivity {
                 String title = intent.getStringExtra("title");
                 final String control = intent.getStringExtra("control");
                 final String data = intent.getStringExtra("data");
+                // 데이터를 보낼 때마다 새로운 값을 getString하므로 final을 써도 된다
 
                 Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE); // 진동 없애려면 삭제
                 if (Build.VERSION.SDK_INT >= 26) { //버전 체크를 해줘야 작동하도록 한다
@@ -478,9 +519,22 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     vibrator.vibrate(1000);
                 }
+                
                 if (control.equals("temp")) { // 받은 FCM 데이터를 화면에 seekBar와 Switch로 보여줌
                     seekBar.setProgress(Integer.parseInt(data.toString()), true);
                     tx_logTemp2.append("목표 온도가 " + data + "℃로 변경되었습니다." + "\n");
+                    // sendDataFrame을 이용해 FCM으로 받은 데이터를 Car Head로 전송
+                    final Set<String> set = maps.keySet(); // maps.keySet()를 통해 키<>를 받아옴
+                    DataFrame df = new DataFrame(); // 받은 데이터를 TCP/IP로 전송하는 부분
+                    String ipp = "";
+                    for (String key : set) { // key값이 1개이므로 for문으로 받아온다
+                        ipp = key.substring(1); // 앞에 들어오는 / 를 지운다
+                        Log.d("[Server]", ipp);
+                    }
+                    df.setIp(ipp);
+                    df.setSender(control);
+                    df.setContents(data);
+                    sendDataFrame(df); // 데이터 프레임 send 함수를 통해 전송
                 } else if (control.equals("door")) {
                     if (data.equals("0")) {
                         sw_door.setChecked(true);
@@ -498,20 +552,6 @@ public class MainActivity extends AppCompatActivity {
                         tx_logCtl2.append("시동이 꺼졌습니다." + "\n");
                     }
                 }
-                // sendData
-                final Set<String> set = maps.keySet();
-                DataFrame df = new DataFrame(); // 받은 데이터를 TCP/IP로 전송하는 부분
-                //                            Socket socket = serverSocket.accept();
-                String ipp = "";
-                for (String key : set) {
-                    ipp = key.substring(1);
-                    Log.d("[Server]", ipp);
-                }
-
-                df.setIp(ipp);
-                df.setSender(control);
-                df.setContents(data);
-                sendDataFrame(df);
 
                 manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                 NotificationCompat.Builder builder = null;
